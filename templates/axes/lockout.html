@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 text-center">
+        <div class="alert alert-danger shadow">
+            <h2 class="alert-heading">Access Denied</h2>
+            <p>Too many failed login attempts have been detected from your IP address.</p>
+            <hr>
+            <p class="mb-0">For security reasons, this IP is locked for <strong>24 hours</strong>. Please try again later or contact support.</p>
+        </div>
+        <a href="{% url 'login' %}" class="btn btn-outline-secondary mt-3">Return to Login</a>
+    </div>
+</div>
+{% endblock %}

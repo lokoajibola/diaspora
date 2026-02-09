@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <h4 class="mb-4">Order Tracking #{{ order.id }}</h4>
+            
+            <div class="tracking-wrapper mb-5 px-2">
+                <div class="tracking-status-dot dot-1 {% if order.status_percentage >= 20 %}dot-active{% endif %}"></div>
+                <div class="tracking-status-dot dot-2 {% if order.status_percentage >= 40 %}dot-active{% endif %}"></div>
+                <div class="tracking-status-dot dot-3 {% if order.status_percentage >= 60 %}dot-active{% endif %}"></div>
+                <div class="tracking-status-dot dot-4 {% if order.status_percentage >= 80 %}dot-active{% endif %}"></div>
+                <div class="tracking-status-dot dot-5 {% if order.status_percentage == 100 %}dot-active{% endif %}"></div>
+
+                <div class="tracking-bar">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success h-100" 
+                         style="width: {{ order.status_percentage }}%;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row text-center small fw-bold text-muted">
+                <div class="col">PLACED</div>
+                <div class="col">PROCESSING</div>
+                <div class="col">SHIPPED</div>
+                <div class="col">IN DESTINATION</div>
+                <div class="col">DELIVERED</div>
+            </div>
+
+            <div class="mt-5 p-3 bg-light rounded d-flex align-items-center">
+                <div class="me-3 fs-1">📦</div>
+                <div>
+                    <h6 class="mb-0">Current Location Status:</h6>
+                    <p class="text-success fw-bold mb-0">{{ order.get_status_display }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between">
+            <h5 class="mb-0">Order Details #{{ order.id }}</h5>
+            <span>Status: <strong>{{ order.status|title }}</strong></span>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-sm-6">
+                    <h6 class="text-muted">Delivery To:</h6>
+                    <p class="mb-0"><strong>{{ order.receiver_name }}</strong></p>
+                    <p class="mb-0">{{ order.delivery_address }}</p>
+                    <p class="mb-0">{{ order.country }}</p>
+                    <p>{{ order.receiver_phone }}</p>
+                </div>
+            </div>
+
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Qty</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ CURRENCY_SYMBOL }}{{ item.price|floatformat:2 }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ CURRENCY_SYMBOL }}{{ item.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="text-end mt-3">
+                <p class="mb-1">Shipping Fee: {{ CURRENCY_SYMBOL }}{{ order.shipping_fee|floatformat:2 }}</p>
+                <h4 class="text-primary">Total: {{ CURRENCY_SYMBOL }}{{ order.total_amount|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

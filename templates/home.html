@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% load currency_tags %}
+{% block content %}
+
+<div class="p-5 mb-4 bg-dark text-white rounded-3 shadow" style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1531050171669-011867c1395b?auto=format&fit=crop&w=1200&q=80'); background-size: cover;">
+    <div class="container-fluid py-5 text-center">
+        <h1 class="display-4 fw-bold">From West Africa to Your Doorstep</h1>
+        <p class="fs-4">Shop authentic items back home and get them shipped to the UK, US, or Canada with ease.</p>
+        <div class="mt-4">
+            <a href="#shop" class="btn btn-primary btn-lg px-4 me-md-2">Start Shopping</a>
+            <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg px-4">Join as Vendor</a>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row text-center g-4">
+        <div class="col-md-4">
+            <div class="p-3 shadow-sm rounded bg-white h-100">
+                <div class="fs-1 text-primary mb-2">🛒</div>
+                <h5>Select Items</h5>
+                <p class="text-muted">Pick groceries, fashion, or essentials from verified West African vendors.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3 shadow-sm rounded bg-white h-100">
+                <div class="fs-1 text-primary mb-2">💳</div>
+                <h5>Secure Payment</h5>
+                <p class="text-muted">Pay in {{ CURRENCY_CODE }} using Paystack. No hidden fees, just direct markups.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3 shadow-sm rounded bg-white h-100">
+                <div class="fs-1 text-primary mb-2">✈️</div>
+                <h5>Track Delivery</h5>
+                <p class="text-muted">Watch your package move from the local hub to your international address.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="shop" class="container py-5">
+    <h3 class="mb-4">Latest from West Africa</h3>
+    <div class="row g-3">
+        {% for product in products %}
+        <div class="col-6 col-md-3">
+            <div class="card h-100 border-0 shadow-sm product-card">
+                <a href="{% url 'product_detail' product.id %}"><img src="{{ product.image.url }}" class="card-img-top" style="height: 180px; object-fit: cover;"></a>
+                <div class="card-body">
+                    <small class="text-muted">Sold by: 
+                        <a href="{% url 'vendor_store' product.vendor.id %}">{{ product.vendor.first_name }}</a>
+                    </small>
+                    <h6 class="text-truncate">{{ product.name }}</h6>
+                    <p class="text-success fw-bold">
+                        {{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}
+                    </p>
+                    <form action="{% url 'cart_add' product.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-primary w-100">Add to Cart</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

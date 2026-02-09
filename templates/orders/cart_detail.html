@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h4 class="mb-0">Your Shopping Cart</h4>
+    </div>
+    <div class="card-body">
+        {% if cart %}
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ CURRENCY_SYMBOL }}{{ item.price|multiply:CURRENCY_RATE|floatformat:2 }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ CURRENCY_SYMBOL }}{{ item.total_price|multiply:CURRENCY_RATE|floatformat:2 }}</td>
+                            <td>
+                                <a href="{% url 'cart_remove' item.product.id %}" class="btn btn-sm btn-danger">Remove</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-end">
+                <h5>Total: ₦{{ cart.get_total_price }}</h5>
+                <a href="{% url 'checkout' %}" class="btn btn-success btn-lg">Proceed to Checkout</a>
+            </div>
+        {% else %}
+            <p class="text-center">Your cart is empty.</p>
+            <a href="{% url 'product_list' %}" class="btn btn-primary">Continue Shopping</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Vendor Payout Management (Admin)</h2>
+
+<div class="card border-warning mb-4">
+    <div class="card-header bg-warning">Pending Weekly/Bi-weekly Payouts</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Vendor (Phone)</th>
+                    <th>Amount (Base Price)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payout in pending_payouts %}
+                <tr>
+                    <td>{{ payout.vendor.phone_number }}</td>
+                    <td>₦{{ payout.amount_owed }}</td>
+                    <td>
+                        <a href="{% url 'mark_as_paid' payout.id %}" class="btn btn-sm btn-success">Confirm Payment Made</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
