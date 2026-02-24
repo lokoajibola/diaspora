@@ -105,7 +105,16 @@ SHIPPING_RATES = {
     'Ghana': 5000.00,
 }
 
+# For messages styling
+from django.contrib.messages import constants as messages
 
+MESSAGE_TAGS = {
+    messages.DEBUG: 'secondary',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',
+}
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
