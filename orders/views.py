@@ -193,30 +193,49 @@ def cart_detail(request):
     cart = Cart(request)
     return render(request, 'orders/cart_detail.html', {'cart': cart})
 
+@require_POST
 def cart_update(request):
-    if request.method == 'POST':
-        item_id = request.POST.get('item_id')
-        quantity = int(request.POST.get('quantity', 1))
-        
-        # Get cart from session
-        cart = request.session.get('cart', {})
-        
-        if item_id in cart:
-            if quantity > 0:
-                cart[item_id]['quantity'] = quantity
-            else:
-                # Remove if quantity is 0 or less
-                del cart[item_id]
-            
-            request.session['cart'] = cart
-            request.session.modified = True
-            messages.success(request, 'Cart updated successfully')
-        else:
-            messages.error(request, 'Item not found in cart')
-    
-    return redirect('cart_detail')
+    # Handle both JSON and form data
+    if request.content_type == 'application/json':
+        data = json.loads(request.body)
+        product_id = data.get('product_id')
+        quantity = data.get('quantity')
+    else:
+        product_id = request.POST.get('product_id')
+        quantity = request.POST.get('quantity')
 
+    if not product_id or not quantity:
+        messages.error(request, 'Missing product or quantity.')
+        return redirect('cart_detail')
 
+    try:
+        quantity = int(quantity)
+        if quantity < 1:
+            quantity = 1
+    except ValueError:
+        messages.error(request, 'Invalid quantity.')
+        return redirect('cart_detail')
+
+    # Get cart from session
+    cart = request.session.get('cart', {})
+
+    product_id_str = str(product_id)
+
+    if product_id_str in cart:
+        # Update quantity
+        cart[product_id_str]['quantity'] = quantity
+        request.session['cart'] = cart
+        request.session.modified = True
+        messages.success(request, 'Cart updated successfully.')
+    else:
+        messages.error(request, 'Product not found in your cart.')
+
+    # If AJAX, return JSON
+    if request.content_type == 'application/json':
+        return JsonResponse({'success': True})
+    else:
+        return redirect('cart_detail')
+        
 @login_required
 def order_history(request):
     orders = Order.objects.filter(customer=request.user).order_by('-created_at')

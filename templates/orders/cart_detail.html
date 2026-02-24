@@ -22,25 +22,22 @@
                     </thead>
                     <tbody>
                         {% for item in cart %}
-                        <tr>
+                        <tr id="cart-row-{{ item.product.id }}" data-product-id="{{ item.product.id }}">
                             <td>{{ item.product.name }}</td>
-                            <td class="item-price">{{ CURRENCY_SYMBOL }}<span class="price-value">{{ item.price|multiply:CURRENCY_RATE|floatformat:2 }}</span></td>
+                            <td class="item-price">{{ CURRENCY_SYMBOL }}<span class="price-value" data-price="{{ item.price|multiply:CURRENCY_RATE }}">{{ item.price|multiply:CURRENCY_RATE|floatformat:2 }}</span></td>
                             <td>
-                                <td>
-    <div class="input-group input-group-sm" style="width: 120px;">
-        <button type="button" class="btn btn-outline-secondary" 
-                onclick="changeQuantity({{ item.product.id }}, -1)">
-            -
-        </button>
-        <span id="quantity-{{ item.product.id }}" class="form-control text-center" style="width: 50px;">
-            {{ item.quantity }}
-        </span>
-        <button type="button" class="btn btn-outline-secondary" 
-                onclick="changeQuantity({{ item.product.id }}, 1)">
-            +
-        </button>
-    </div>
-</td>
+                                <form method="post" action="{% url 'cart_update' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                    <div class="input-group input-group-sm" style="width: 100px;">
+                                        <select name="quantity" class="form-select form-select-sm" onchange="this.form.submit()">
+                                            {% for i in "12345678910"|make_list %}
+                                                <option value="{{ i }}" {% if item.quantity == i|add:0 %}selected{% endif %}>{{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit" class="btn btn-outline-secondary">Update</button>
+                                    </div>
+                                </form>
                             </td>
                             <td class="item-total">{{ CURRENCY_SYMBOL }}<span id="total-{{ item.product.id }}">
                                 {{ item.total_price|multiply:CURRENCY_RATE|floatformat:2 }}
@@ -84,12 +81,32 @@
 
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Attach event listeners to all minus and plus buttons
+    document.querySelectorAll('.btn-minus').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const productId = this.dataset.productId;
+            changeQuantity(productId, -1);
+        });
+    });
+    
+    document.querySelectorAll('.btn-plus').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const productId = this.dataset.productId;
+            changeQuantity(productId, 1);
+        });
+    });
+});
+
 function changeQuantity(productId, change) {
     const quantitySpan = document.getElementById('quantity-' + productId);
     const totalSpan = document.getElementById('total-' + productId);
+    const priceSpan = document.querySelector(`#cart-row-${productId} .price-value`);
     
-    if (!quantitySpan || !totalSpan) {
-        alert('Error: Could not find quantity element');
+    if (!quantitySpan || !totalSpan || !priceSpan) {
+        alert('Error: Could not find required elements');
         return;
     }
     
@@ -98,26 +115,24 @@ function changeQuantity(productId, change) {
     
     if (newQuantity < 1) {
         newQuantity = 1;
-        return;
+        return; // Don't allow quantity below 1
     }
     
+    // Update UI immediately for responsiveness
     quantitySpan.textContent = newQuantity;
     
-    // Update total - you need to get the price somehow
-    // Option 1: Pass price as data attribute
-    // Option 2: Calculate from existing total
-    const oldTotal = parseFloat(totalSpan.textContent) || 0;
-    const oldQuantity = currentQuantity;
-    const price = oldTotal / oldQuantity;
-    const newTotal = price * newQuantity;
+    // Get price per item (already converted)
+    const pricePerItem = parseFloat(priceSpan.dataset.price);
     
+    // Calculate new total for this item
+    const newTotal = pricePerItem * newQuantity;
     totalSpan.textContent = newTotal.toFixed(2);
     
-    // Update grand total
+    // Recalculate grand total
     updateGrandTotal();
     
-    // Send to server
-    updateServerQuantity(productId, newQuantity);
+    // Send update to server via AJAX
+    updateCartOnServer(productId, newQuantity);
 }
 
 function updateGrandTotal() {
@@ -128,39 +143,85 @@ function updateGrandTotal() {
     
     const grandTotalElem = document.getElementById('grand-total');
     if (grandTotalElem) {
-        // Keep the currency symbol
+        // Keep the currency symbol (assuming it's the first character)
         const text = grandTotalElem.textContent;
         const symbol = text.charAt(0);
         grandTotalElem.textContent = symbol + total.toFixed(2);
     }
 }
 
-function updateServerQuantity(productId, quantity) {
-    // Simple form submission
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '{% url "cart_update" %}';
+function updateCartOnServer(productId, quantity) {
+    const csrftoken = getCookie('csrftoken');
     
-    const csrf = document.createElement('input');
-    csrf.type = 'hidden';
-    csrf.name = 'csrfmiddlewaretoken';
-    csrf.value = '{{ csrf_token }}';
-    form.appendChild(csrf);
+    fetch('{% url "cart_update" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+            product_id: productId,
+            quantity: quantity
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            // If server update fails, revert changes
+            console.error('Server update failed:', data.error);
+            showNotification('Failed to update cart: ' + data.error, 'danger');
+            // Optionally reload page to restore correct state
+            location.reload();
+        } else {
+            // Optionally show success message
+            showNotification('Cart updated', 'success');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Network error. Please try again.', 'danger');
+        location.reload(); // Revert on error
+    });
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Simple notification function
+function showNotification(message, type) {
+    // Remove existing notifications
+    const existing = document.querySelector('.cart-notification');
+    if (existing) existing.remove();
     
-    const pid = document.createElement('input');
-    pid.type = 'hidden';
-    pid.name = 'product_id';
-    pid.value = productId;
-    form.appendChild(pid);
+    const notification = document.createElement('div');
+    notification.className = `cart-notification alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
     
-    const qty = document.createElement('input');
-    qty.type = 'hidden';
-    qty.name = 'quantity';
-    qty.value = quantity;
-    form.appendChild(qty);
+    document.body.appendChild(notification);
     
-    document.body.appendChild(form);
-    form.submit();
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 3000);
 }
 </script>
 {% endblock %}

@@ -3,7 +3,7 @@ from . import views
 
 urlpatterns = [
     path('cart/', views.cart_detail, name='cart_detail'),
-    path('cart/update/', views.update_cart_ajax, name='cart_update'),
+    path('cart/update/', views.cart_update, name='cart_update'),
     path('track/<int:order_id>/', views.track_order, name='track_order'),
     
     path('verify/', views.verify_paystack_payment, name='verify_payment'),
