@@ -20,6 +20,14 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=1)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_promoted = models.BooleanField(default=False)
+    promotion_expires_at = models.DateTimeField(null=True, blank=True)
+
+    def active_promotion(self):
+        """Check if the promotion is still valid"""
+        if self.is_promoted and self.promotion_expires_at:
+            return self.promotion_expires_at > timezone.now()
+        return False
 
     @property
     def selling_price(self):

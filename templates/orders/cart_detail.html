@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load currency_tags %}
 
 {% block content %}
@@ -23,25 +24,143 @@
                         {% for item in cart %}
                         <tr>
                             <td>{{ item.product.name }}</td>
-                            <td>{{ CURRENCY_SYMBOL }}{{ item.price|multiply:CURRENCY_RATE|floatformat:2 }}</td>
-                            <td>{{ item.quantity }}</td>
-                            <td>{{ CURRENCY_SYMBOL }}{{ item.total_price|multiply:CURRENCY_RATE|floatformat:2 }}</td>
+                            <td class="item-price">{{ CURRENCY_SYMBOL }}<span class="price-value">{{ item.price|multiply:CURRENCY_RATE|floatformat:2 }}</span></td>
+                            <td>
+                                <td>
+    <div class="input-group input-group-sm" style="width: 120px;">
+        <button type="button" class="btn btn-outline-secondary" 
+                onclick="changeQuantity({{ item.product.id }}, -1)">
+            -
+        </button>
+        <span id="quantity-{{ item.product.id }}" class="form-control text-center" style="width: 50px;">
+            {{ item.quantity }}
+        </span>
+        <button type="button" class="btn btn-outline-secondary" 
+                onclick="changeQuantity({{ item.product.id }}, 1)">
+            +
+        </button>
+    </div>
+</td>
+                            </td>
+                            <td class="item-total">{{ CURRENCY_SYMBOL }}<span id="total-{{ item.product.id }}">
+                                {{ item.total_price|multiply:CURRENCY_RATE|floatformat:2 }}
+                            </span></td>
                             <td>
                                 <a href="{% url 'cart_remove' item.product.id %}" class="btn btn-sm btn-danger">Remove</a>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
+                    <tfoot>
+                        <tr class="border-top">
+                            <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                            <td colspan="2" class="text-start">
+                                <strong id="grand-total">
+                                    {{ CURRENCY_SYMBOL }}{{ cart.get_total_price|multiply:CURRENCY_RATE|floatformat:2 }}
+                                </strong>
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
-            <div class="text-end">
-                <h5>Total: ₦{{ cart.get_total_price }}</h5>
-                <a href="{% url 'checkout' %}" class="btn btn-success btn-lg">Proceed to Checkout</a>
+            <div class="text-end mt-4">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'checkout' %}" class="btn btn-primary btn-lg">Proceed to Checkout</a>
+                {% else %}
+                    <a href="{% url 'login' %}?next={% url 'checkout' %}" class="btn btn-warning btn-lg">
+                        Log in to Checkout
+                    </a>
+                {% endif %}
             </div>
         {% else %}
             <p class="text-center">Your cart is empty.</p>
-            <a href="{% url 'product_list' %}" class="btn btn-primary">Continue Shopping</a>
+            <div class="text-center">
+                <a href="{% url 'product_list' %}" class="btn btn-primary">Continue Shopping</a>
+            </div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function changeQuantity(productId, change) {
+    const quantitySpan = document.getElementById('quantity-' + productId);
+    const totalSpan = document.getElementById('total-' + productId);
+    
+    if (!quantitySpan || !totalSpan) {
+        alert('Error: Could not find quantity element');
+        return;
+    }
+    
+    let currentQuantity = parseInt(quantitySpan.textContent) || 0;
+    let newQuantity = currentQuantity + change;
+    
+    if (newQuantity < 1) {
+        newQuantity = 1;
+        return;
+    }
+    
+    quantitySpan.textContent = newQuantity;
+    
+    // Update total - you need to get the price somehow
+    // Option 1: Pass price as data attribute
+    // Option 2: Calculate from existing total
+    const oldTotal = parseFloat(totalSpan.textContent) || 0;
+    const oldQuantity = currentQuantity;
+    const price = oldTotal / oldQuantity;
+    const newTotal = price * newQuantity;
+    
+    totalSpan.textContent = newTotal.toFixed(2);
+    
+    // Update grand total
+    updateGrandTotal();
+    
+    // Send to server
+    updateServerQuantity(productId, newQuantity);
+}
+
+function updateGrandTotal() {
+    let total = 0;
+    document.querySelectorAll('[id^="total-"]').forEach(span => {
+        total += parseFloat(span.textContent) || 0;
+    });
+    
+    const grandTotalElem = document.getElementById('grand-total');
+    if (grandTotalElem) {
+        // Keep the currency symbol
+        const text = grandTotalElem.textContent;
+        const symbol = text.charAt(0);
+        grandTotalElem.textContent = symbol + total.toFixed(2);
+    }
+}
+
+function updateServerQuantity(productId, quantity) {
+    // Simple form submission
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "cart_update" %}';
+    
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = 'csrfmiddlewaretoken';
+    csrf.value = '{{ csrf_token }}';
+    form.appendChild(csrf);
+    
+    const pid = document.createElement('input');
+    pid.type = 'hidden';
+    pid.name = 'product_id';
+    pid.value = productId;
+    form.appendChild(pid);
+    
+    const qty = document.createElement('input');
+    qty.type = 'hidden';
+    qty.name = 'quantity';
+    qty.value = quantity;
+    form.appendChild(qty);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
 {% endblock %}

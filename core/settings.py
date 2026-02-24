@@ -87,6 +87,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.currency_processor',
+                'users.context_processors.notification_count',
             ],
         },
     },
@@ -97,6 +98,8 @@ WSGI_APPLICATION = "core.wsgi.application"
 LOGIN_REDIRECT_URL = 'login_redirect'
 LOGOUT_REDIRECT_URL = 'home'
 
+# This is the key used to store the cart in the session
+CART_SESSION_ID = 'cart'
 
 SHIPPING_RATES = {
     'UK': 15000.00,   # Base NGN rate

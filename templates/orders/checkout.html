@@ -16,15 +16,15 @@
                 <div class="row">
                     <div class="col-md-7">
                         <h4>Receiver Details</h4>
-                        <input type="text" name="receiver_name" class="form-control mb-2" placeholder="Full Name" required>
-                        <input type="text" name="receiver_phone" class="form-control mb-2" placeholder="Phone Number" required>
-                        <textarea name="address" class="form-control mb-2" placeholder="Full Delivery Address" required></textarea>
-                        
                         <select name="country" class="form-select mb-2" onchange="window.location.href='?country='+this.value">
                             {% for country, rate in shipping_rates.items %}
                                 <option value="{{ country }}" {% if selected_country == country %}selected{% endif %}>{{ country }}</option>
                             {% endfor %}
                         </select>
+                        <input type="text" name="receiver_name" class="form-control mb-2" placeholder="Full Name" required>
+                        <input type="text" name="receiver_phone" class="form-control mb-2" placeholder="Phone Number" required>
+                        <textarea name="delivery_address" class="form-control mb-2" placeholder="Full Delivery Address" required></textarea>
+                        
                     </div>
                     <div class="col-md-5">
                         <div class="card p-3">

@@ -1,68 +1,68 @@
 {% extends 'base.html' %}
+{% load currency_tags %}
+
 {% block content %}
-<div class="container py-5">
+<div class="container mt-4">
     <div class="row mb-4">
-        <div class="col-md-8">
-            <h2>Vendor Dashboard</h2>
-            <p class="text-muted">Welcome back, {{ user.first_name }}. Here is your sales summary.</p>
+        <div class="col-md-4">
+            <div class="card bg-primary text-white shadow-sm">
+                <div class="card-body">
+                    <h6>Total Sales</h6>
+                    <h3 class="mb-0">{{ CURRENCY_SYMBOL }}{{ total_revenue|multiply:CURRENCY_RATE|floatformat:2 }}</h3>
+                </div>
+            </div>
         </div>
-        <div class="col-md-4 text-end">
-            <div class="card bg-primary text-white p-3 shadow-sm">
-                <h6>Total Revenue</h6>
-                <h3 class="mb-0">{{ CURRENCY_SYMBOL }}{{ total_revenue|floatformat:2 }}</h3>
+        <div class="col-md-4">
+            <div class="card bg-success text-white shadow-sm">
+                <div class="card-body">
+                    <h6>Active Orders</h6>
+                    <h3>{{ active_orders_count }}</h3>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white"><strong>Recent Sales</strong></div>
-                <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Product</th>
-                                <th>Qty</th>
-                                <th>Amount</th>
-                                <th>Order Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for sale in sales %}
-                            <tr>
-                                <td>{{ sale.product.name }}</td>
-                                <td>{{ sale.quantity }}</td>
-                                <td>{{ CURRENCY_SYMBOL }}{{ sale.price|floatformat:2 }}</td>
-                                <td><span class="badge bg-secondary">{{ sale.order.status|title }}</span></td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="4" class="text-center py-4">No sales yet.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <strong>My Inventory</strong>
-                    <a href="{% url 'admin:products_product_add' %}" class="btn btn-sm btn-outline-primary">+ Add New</a>
-                </div>
-                <ul class="list-group list-group-flush">
-                    {% for product in products %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ product.name }}
-                        <span class="badge bg-{% if product.is_active %}success{% else %}danger{% endif %} rounded-pill">
-                            {% if product.is_active %}Active{% else %}Hidden{% endif %}
+    <h4 class="fw-bold mb-3">Order Management</h4>
+    <div class="table-responsive bg-white shadow-sm rounded">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>#{{ order.id }}</td>
+                    <td>{{ order.receiver_name }}</td>
+                    <td>{{ order.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        <span class="badge {% if order.status == 'shipped' %}bg-info{% elif order.status == 'paid' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ order.get_status_display }}
                         </span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
+                    </td>
+                    <td>
+                        {% if order.status == 'paid' %}
+                        <form action="{% url 'vendor_confirm_dispatch' order.id %}" method="POST" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-warning">Confirm Dispatch</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small">No action needed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4">No orders found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
