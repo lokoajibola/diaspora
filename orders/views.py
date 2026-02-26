@@ -21,6 +21,7 @@ from django.core.exceptions import PermissionDenied
 import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from .utils import ensure_tracking_number, credit_vendors_for_paid_order, reduce_stock_for_paid_order
 
 @require_POST
 @login_required
@@ -42,6 +43,13 @@ def update_cart_ajax(request):
         product_id_str = str(product_id)
         
         if product_id_str in cart:
+            product = get_object_or_404(Product, id=product_id)
+            if quantity > product.stock:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Only {product.stock} item(s) in stock'
+                })
+
             cart[product_id_str]['quantity'] = quantity
             request.session['cart'] = cart
             request.session.modified = True
@@ -108,25 +116,30 @@ def admin_update_status(request, order_id):
 
 @login_required
 def vendor_confirm_dispatch(request, order_id):
-    # Ensure the user is a vendor and the order exists
     if request.user.role != 'vendor':
         messages.error(request, "Unauthorized access.")
         return redirect('home')
 
     order = get_object_or_404(Order, id=order_id)
+    vendor_has_item = OrderItem.objects.filter(order=order, product__vendor=request.user).exists()
+
+    if not vendor_has_item:
+        messages.error(request, "You can only dispatch orders that include your products.")
+        return redirect('vendor_dashboard')
 
     if request.method == 'POST':
-        # 1. Update status
+        if order.status != 'paid':
+            messages.info(request, "Only paid/processing orders can be marked as dispatched.")
+            return redirect('vendor_dashboard')
+
         order.status = 'shipped'
-        
-        # 2. Generate a Tracking Number if one doesn't exist
+
         if not order.tracking_number:
-            # Generates a code like DW-ABC12345
             short_id = str(uuid.uuid4()).upper()[:8]
             order.tracking_number = f"DW-{short_id}"
-        
+
         order.save()
-        
+
         messages.success(request, f"Order #{order.id} marked as Dispatched! Tracking: {order.tracking_number}")
         return redirect('vendor_dashboard')
 
@@ -147,8 +160,12 @@ def paystack_webhook(request):
             # Find the order and mark as paid
             try:
                 order = Order.objects.get(paystack_ref=ref)
-                order.status = 'paid' # Or your relevant status
+                order.status = 'paid'
+                ensure_tracking_number(order)
                 order.save()
+                credit_vendors_for_paid_order(order)
+                reduce_stock_for_paid_order(order)
+                order.save(update_fields=['vendor_credit_processed', 'stock_deducted'])
             except Order.DoesNotExist:
                 pass
                 
@@ -179,13 +196,21 @@ def track_order(request, order_id):
 def cart_add(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
+
+    if not product.is_active or product.stock < 1:
+        messages.error(request, "This product is currently out of stock.")
+        return redirect('product_detail', pk=product.id)
     
-    # Get quantity from form, default to 1
     quantity = int(request.POST.get('quantity', 1))
-    # Get the override flag (True if updating from cart, False if adding from shop)
+    if quantity < 1:
+        quantity = 1
+    if quantity > product.stock:
+        quantity = product.stock
+
     override = request.POST.get('override', 'False') == 'True'
     
     cart.add(product=product, quantity=quantity, override_quantity=override)
+    messages.success(request, f"{product.name} added to cart.")
     
     return redirect('cart_detail')
 
@@ -222,6 +247,11 @@ def cart_update(request):
     product_id_str = str(product_id)
 
     if product_id_str in cart:
+        product = get_object_or_404(Product, id=product_id)
+        if quantity > product.stock:
+            quantity = product.stock
+            messages.warning(request, f"Quantity adjusted to available stock ({product.stock}).")
+
         # Update quantity
         cart[product_id_str]['quantity'] = quantity
         request.session['cart'] = cart
@@ -282,7 +312,11 @@ def checkout(request):
         receiver_phone = request.POST.get('receiver_phone')
         delivery_address = request.POST.get('delivery_address') 
         
-        # 2. Calculate Totals (Ensuring we use floats for the database/session)
+        for item in cart:
+            if item['quantity'] > item['product'].stock:
+                messages.error(request, f"{item['product'].name} has only {item['product'].stock} item(s) left in stock.")
+                return redirect('cart_detail')
+
         subtotal = float(cart.get_total_price())
         total_price = subtotal + shipping_fee
         
@@ -336,34 +370,21 @@ def payment_success(request):
 
 def verify_paystack_payment(request):
     reference = request.GET.get('reference')
-    url = f"https://api.api.paystack.co/transaction/verify/{reference}"
+    url = f"https://api.paystack.co/transaction/verify/{reference}"
     headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
     
     response = requests.get(url, headers=headers)
     res_data = response.json()
 
-    from payments.models import VendorPayout
-    cart = Cart(request)
-    
-    # Inside the verification success logic:
-    for item in cart:
-        VendorPayout.objects.create(
-            vendor=item.product.vendor,
-            amount_owed=item.product.base_price * item.quantity
-        )
-    
     if res_data['status'] and res_data['data']['status'] == 'success':
-        # Find order using reference (assuming you stored ref in order)
-        # For simplicity in this logic, we use session or latest order
         order = Order.objects.filter(customer=request.user).latest('created_at')
         order.paystack_ref = reference
-        order.status = 'processing'
+        order.status = 'paid'
+        ensure_tracking_number(order)
         order.save()
-
-        # Generate Payouts for Vendors involved
-        # Assuming an OrderItem model exists to track specific products
-        # Logic: amount = item.product.base_price
-        # VendorPayout.objects.create(vendor=..., amount_owed=...)
+        credit_vendors_for_paid_order(order)
+        reduce_stock_for_paid_order(order)
+        order.save(update_fields=['vendor_credit_processed', 'stock_deducted'])
 
         return render(request, 'orders/success.html', {'order': order})
     

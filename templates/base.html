@@ -9,34 +9,160 @@
     <title>Diaspora Way</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar { background-color: #004d40; }
-        .btn-primary { background-color: #004d40; border: none; }
-        .navbar-dark .navbar-nav .nav-link { color: rgba(255,255,255,.8); }
-        .navbar-dark .navbar-nav .nav-link:hover { color: #fff; }
-        .search-form { width: 40%; margin: 0 auto; }
-        @media (max-width: 768px) {
-            .search-form { width: 100%; margin: 10px 0; }
+        :root {
+            --brand-primary: #004d40;
+            --brand-primary-hover: #00695c;
+            --text-muted-light: rgba(255, 255, 255, 0.75);
+        }
+
+        body {
+            background-color: #f5f7fb;
+            color: #1f2937;
+        }
+
+        .app-navbar {
+            background: linear-gradient(90deg, #003f36 0%, var(--brand-primary) 100%);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .navbar-brand img {
+            height: 34px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .brand-title {
+            letter-spacing: 0.2px;
+        }
+
+        .search-form {
+            width: 44%;
+            min-width: 280px;
+        }
+
+        .search-form .form-control {
+            border: 0;
+            border-radius: 12px;
+        }
+
+        .search-form .btn {
+            border-radius: 12px;
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-primary {
+            background-color: var(--brand-primary);
+            border: none;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background-color: var(--brand-primary-hover);
+        }
+
+        .navbar-dark .navbar-nav .nav-link {
+            color: var(--text-muted-light);
+        }
+
+        .navbar-dark .navbar-nav .nav-link:hover {
+            color: #fff;
+        }
+
+        .icon-btn {
+            color: #fff;
+            text-decoration: none;
+            position: relative;
+            padding: 0.35rem 0.55rem;
+            border-radius: 10px;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .main-shell {
+            min-height: 62vh;
+        }
+
+        .site-footer {
+            background: #0f172a;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .site-footer h6 {
+            color: #fff;
+        }
+
+        .site-footer a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+        }
+
+        .site-footer a:hover {
+            color: #fff;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        @media (max-width: 991px) {
+            .search-form {
+                width: 100%;
+                min-width: 0;
+                margin: 0.75rem 0;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .navbar-brand img {
+                height: 30px;
+            }
+
+            .brand-title {
+                font-size: 0.95rem;
+            }
+
+            .navbar {
+                padding-top: 0.6rem;
+                padding-bottom: 0.6rem;
+            }
+
+            .search-form .form-control,
+            .search-form .btn,
+            .dropdown-menu .dropdown-item {
+                font-size: 0.9rem;
+            }
+
+            .main-shell .container {
+                margin-top: 1rem !important;
+                padding-left: 0.85rem;
+                padding-right: 0.85rem;
+            }
+
+            .site-footer .container {
+                padding-top: 2rem !important;
+                padding-bottom: 2rem !important;
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #004d40;">
+    <nav class="navbar navbar-expand-lg navbar-dark app-navbar sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'home' %}">
                 <img src="{% static 'images/dw1.jpg' %}" alt="Diaspora Way">
+                <span class="fw-semibold brand-title">Diaspora Way</span>
             </a>
 
-            
-            <!-- Mobile Toggle Button -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" 
                     aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
-            <!-- Navbar Content -->
             <div class="collapse navbar-collapse" id="navbarMain">
-                <!-- Search Form (Centered) -->
                 <form class="d-flex mx-auto search-form" action="{% url 'home' %}" method="GET">
                     <input class="form-control me-2" type="search" name="q" 
                            placeholder="Search products, brands, or categories..." 
@@ -44,9 +170,58 @@
                     <button class="btn btn-outline-light" type="submit">Search</button>
                 </form>
                 
-                <!-- Right Side Items -->
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <!-- Currency Converter Dropdown (Moved inside navbar-nav) -->
+                    
+                    
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                Hi, {{ user.first_name|default:user.phone_number }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Role: {{ user.get_role_display }}</h6></li>
+                                
+                                {% if user.role == 'vendor' %}
+                                    <li><a class="dropdown-item" href="{% url 'vendor_dashboard' %}">Vendor Dashboard</a></li>
+                                {% elif user.role == 'logistics' %}
+                                    <li><a class="dropdown-item" href="{% url 'logistics_dashboard' %}">Logistics Hub</a></li>
+                                {% endif %}
+                                
+                                <li><a class="dropdown-item" href="{% url 'order_history' %}">My Orders</a></li>
+                                <li><a class="dropdown-item" href="{% url 'edit_profile' %}">Edit Profile</a></li>
+                                
+                                {% if user.is_staff or user.is_superuser %}
+                                <li><a class="dropdown-item" href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin Panel</a></li>
+                                {% endif %}
+                                
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form action="{% url 'logout' %}" method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">Logout</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                        <li class="nav-item"><a class="btn btn-primary ms-2" href="{% url 'register' %}">Sign Up</a></li>
+                    {% endif %}
+                    
+                    <li class="nav-item ms-2">
+                        <a href="{% url 'cart_detail' %}" class="icon-btn" title="Cart" aria-label="Cart">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cart" viewBox="0 0 16 16">
+                                <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            </svg>
+                            {% if cart_count %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ cart_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </li>
                     {% if currencies %}
                     <li class="nav-item dropdown me-2">
                         <button class="btn btn-outline-light dropdown-toggle" type="button" id="currencyDropdown" 
@@ -72,84 +247,26 @@
                         </ul>
                     </li>
                     {% endif %}
-                    
-                    <!-- User Menu -->
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" 
-                               data-bs-toggle="dropdown" aria-expanded="false">
-                                Hi, {{ user.first_name|default:user.phone_number }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><h6 class="dropdown-header">Role: {{ user.get_role_display }}</h6></li>
-                                
-                                {% if user.role == 'vendor' %}
-                                    <li><a class="dropdown-item" href="{% url 'vendor_dashboard' %}">Vendor Dashboard</a></li>
-                                {% elif user.role == 'logistics' %}
-                                    <li><a class="dropdown-item" href="{% url 'logistics_dashboard' %}">Logistics Hub</a></li>
-                                {% endif %}
-                                
-                                <li><a class="dropdown-item" href="{% url 'order_history' %}">My Orders</a></li>
-                                <li><a class="dropdown-item" href="{% url 'edit_profile' %}">Edit Profile</a></li>
-                                
-                                {% if user.is_staff or user.is_superuser %}
-                                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin Panel</a></li>
-                                {% endif %}
-                                
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form action="{% url 'logout' %}" method="post" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="dropdown-item text-danger">Logout</button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                        <li class="nav-item"><a class="btn btn-primary ms-2" href="{% url 'register' %}">Sign Up</a></li>
-                    {% endif %}
-                    
-                    <!-- Cart Icon (Optional - add if you have cart) -->
+
+                    {% if user.is_authenticated and user.role == 'vendor' %}
                     <li class="nav-item ms-2">
-                        <a href="{% url 'cart_detail' %}" class="nav-link position-relative">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cart" viewBox="0 0 16 16">
-                                <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                            </svg>
-                            {% if cart_count %}
+                        <a class="icon-btn" href="{% url 'vendor_notifications' %}" title="Notifications" aria-label="Notifications">
+                            🔔
+                            {% if unread_notifications_count > 0 %}
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ cart_count }}
+                                {{ unread_notifications_count }}
                             </span>
                             {% endif %}
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
-                <div class="dropdown">
-                    <button class="btn btn-outline-light dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown">
-                        {{ CURRENCY_CODE }} ({{ CURRENCY_SYMBOL }})
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/set-currency/?currency=NGN">NGN (₦)</a></li>
-                        <li><a class="dropdown-item" href="/set-currency/?currency=GBP">GBP (£)</a></li>
-                        <li><a class="dropdown-item" href="/set-currency/?currency=USD">USD ($)</a></li>
-                    </ul>
-                </div>
-                <li class="nav-item position-relative">
-                    <a class="nav-link" href="{% url 'vendor_notifications' %}">
-                        <i class="bi bi-bell fs-5"></i>
-                        {% if unread_notifications_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ unread_notifications_count }}
-                            </span>
-                        {% endif %}
-                    </a>
-                </li>
             </div>
         </div>
     </nav>
     
+    <main class="main-shell">
     <div class="container mt-4">
-        <!-- Messages/Alerts -->
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -158,49 +275,46 @@
                 </div>
             {% endfor %}
         {% endif %}
-        
-        <!-- Main Content -->
+
         {% block content %}{% endblock %}
     </div>
+    </main>
     
-    <!-- Footer -->
-    <footer class="bg-light text-center text-lg-start mt-5">
-        <div class="container p-4">
-            <div class="row">
-                <div class="col-lg-6 col-md-12 mb-4 mb-md-0">
-                    <h5 class="text-uppercase">Diaspora Way</h5>
-                    <p>
-                        Connecting diaspora communities with authentic products from home.
+    <footer class="site-footer mt-5">
+        <div class="container py-5">
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <h6 class="text-uppercase fw-bold mb-3">Diaspora Way</h6>
+                    <p class="mb-0">
+                        A trusted global marketplace connecting international buyers with verified African vendors.
                     </p>
                 </div>
-                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
-                    <h5 class="text-uppercase">Links</h5>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase fw-bold mb-3">Quick Links</h6>
                     <ul class="list-unstyled mb-0">
-                        <li><a href="{% url 'home' %}" class="text-dark">Home</a></li>
-                        <li><a href="#" class="text-dark">About Us</a></li>
-                        <li><a href="#" class="text-dark">Contact</a></li>
+                        <li class="mb-2"><a href="{% url 'home' %}">Home</a></li>
+                        <li class="mb-2"><a href="{% url 'order_history' %}">My Orders</a></li>
+                        <li><a href="{% url 'cart_detail' %}">Cart</a></li>
                     </ul>
                 </div>
-                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
-                    <h5 class="text-uppercase">Follow Us</h5>
+                <div class="col-lg-4 col-md-6">
+                    <h6 class="text-uppercase fw-bold mb-3">Customer Support</h6>
                     <ul class="list-unstyled mb-0">
-                        <li><a href="#" class="text-dark">Facebook</a></li>
-                        <li><a href="#" class="text-dark">Twitter</a></li>
-                        <li><a href="#" class="text-dark">Instagram</a></li>
+                        <li class="mb-2">Secure checkout with Paystack</li>
+                        <li class="mb-2">Order tracking from purchase to delivery</li>
+                        <li>Vendor KYC and payout verification workflow</li>
                     </ul>
                 </div>
             </div>
         </div>
-        <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
+        <div class="text-center py-3 footer-bottom">
             © {% now "Y" %} Diaspora Way. All rights reserved.
         </div>
     </footer>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Optional: Additional JavaScript -->
+
     <script>
-        // Auto-hide alerts after 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');

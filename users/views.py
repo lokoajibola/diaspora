@@ -10,40 +10,49 @@ from orders.models import Order
 from django.db.models import Sum, F
 from orders.models import OrderItem, PayoutRequest
 from products.models import Product
-from .models import User
+from .models import User, Notification
 from django.utils import timezone
 from django.db.models.functions import TruncDate
 from datetime import timedelta
-import uuid
 from django.db import transaction
 from django.db.models import Q
+from orders.utils import ensure_tracking_number, credit_vendors_for_paid_order, reduce_stock_for_paid_order
 
 @staff_member_required
 def approve_payout(request, payout_id):
     if request.method == 'POST':
         payout = get_object_or_404(PayoutRequest, id=payout_id)
+        transfer_reference = request.POST.get('transfer_reference', '').strip()
         
         if not payout.is_paid:
             with transaction.atomic():
-                # 1. Update the vendor's balance
                 vendor = payout.vendor
+                if not vendor.bank_name or not vendor.bank_account_name or not vendor.bank_account_number:
+                    messages.error(request, "Vendor bank details are missing. Ask vendor to complete KYC bank details first.")
+                    return redirect('admin_dashboard')
+
+                if not transfer_reference:
+                    messages.error(request, "Transfer reference is required to confirm payout.")
+                    return redirect('admin_dashboard')
+
                 if vendor.balance >= payout.amount:
                     vendor.balance -= payout.amount
                     vendor.save()
                     
-                    # 2. Mark the request as paid
                     payout.is_paid = True
+                    payout.transfer_reference = transfer_reference
+                    payout.paid_at = timezone.now()
+                    payout.processed_by = request.user
                     payout.save()
                     
-                    messages.success(request, f"Payout of ${payout.amount} for {vendor.shop_name} confirmed.")
+                    messages.success(request, f"Payout of {payout.amount} for {vendor.shop_name} marked as transferred.")
                 else:
                     messages.error(request, "Vendor balance is insufficient for this payout amount.")
             
-                # Add this notification logic
                 Notification.objects.create(
                     user=vendor,
-                    message=f"Your payout request of ${payout.amount} has been processed and paid!",
-                    link="#" # Or link to a payout history page
+                    message=f"Your payout request of {payout.amount} has been transferred to your bank account.",
+                    link="#"
                 )
         
         else:
@@ -55,13 +64,12 @@ def approve_payout(request, payout_id):
 
 @staff_member_required # Ensures only site admins can access
 def admin_dashboard(request):
-    # 1. Analytics Calculations
     total_revenue = Order.objects.filter(status__in=['paid', 'shipped', 'delivered']).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     total_orders = Order.objects.count()
     total_vendors = User.objects.filter(role='vendor').count()
     total_customers = User.objects.filter(role='customer').count()
+    total_logistics = User.objects.filter(role='logistics').count()
     
-    # 2. Search & Order Tracking
     query = request.GET.get('q', '')
     all_orders = Order.objects.all().select_related('customer')
     
@@ -73,7 +81,6 @@ def admin_dashboard(request):
             Q(customer__phone_number__icontains=query)
         )
 
-    # --- Chart Data: Revenue over the last 30 days ---
     thirty_days_ago = timezone.now() - timedelta(days=30)
     revenue_data = (
         Order.objects.filter(status='paid', created_at__gte=thirty_days_ago)
@@ -83,23 +90,103 @@ def admin_dashboard(request):
         .order_by('date')
     )
 
-    # Prepare labels and values for JavaScript
     chart_labels = [data['date'].strftime('%b %d') for data in revenue_data]
     chart_values = [float(data['daily_revenue']) for data in revenue_data]
-    payout_requests = PayoutRequest.objects.filter(is_paid=False).order_by('-created_at')
+
+    payout_requests = PayoutRequest.objects.filter(is_paid=False).select_related('vendor').order_by('-created_at')
+    recent_transfers = PayoutRequest.objects.filter(is_paid=True).select_related('vendor', 'processed_by').order_by('-paid_at')[:10]
+
+    pending_payout_total = User.objects.filter(role='vendor').aggregate(Sum('balance'))['balance__sum'] or 0
+    transferred_total = PayoutRequest.objects.filter(is_paid=True).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    managed_users = User.objects.filter(is_superuser=False).order_by('-date_joined')[:20]
+    pending_kyc_vendors = User.objects.filter(
+        role='vendor',
+        is_verified=False
+    ).filter(
+        Q(kyc_rejection_reason__isnull=True) | Q(kyc_rejection_reason='')
+    ).order_by('-date_joined')[:10]
+    delivery_queue = Order.objects.filter(status__in=['paid', 'shipped']).order_by('-created_at')[:20]
 
     context = {
         'revenue': total_revenue,
         'order_count': total_orders,
         'vendor_count': total_vendors,
         'customer_count': total_customers,
+        'logistics_count': total_logistics,
         'orders': all_orders,
         'query': query,
         'chart_labels': chart_labels,
         'chart_values': chart_values,
         'payout_requests': payout_requests,
+        'recent_transfers': recent_transfers,
+        'pending_payout_total': pending_payout_total,
+        'transferred_total': transferred_total,
+        'managed_users': managed_users,
+        'pending_kyc_vendors': pending_kyc_vendors,
+        'pending_kyc_count': pending_kyc_vendors.count(),
+        'delivery_queue': delivery_queue,
     }
     return render(request, 'admin_custom/dashboard.html', context)
+
+@staff_member_required
+def admin_approve_vendor_kyc(request, user_id):
+    if request.method == 'POST':
+        vendor = get_object_or_404(User, id=user_id, role='vendor')
+        vendor.is_verified = True
+        vendor.kyc_rejection_reason = None
+        vendor.save(update_fields=['is_verified', 'kyc_rejection_reason'])
+
+        Notification.objects.create(
+            user=vendor,
+            message="Your KYC has been approved. Your vendor account is now verified.",
+            link="#"
+        )
+        messages.success(request, f"Vendor {vendor.phone_number} KYC approved.")
+
+    return redirect('admin_dashboard')
+
+@staff_member_required
+def admin_reject_vendor_kyc(request, user_id):
+    if request.method == 'POST':
+        vendor = get_object_or_404(User, id=user_id, role='vendor')
+        rejection_reason = request.POST.get('rejection_reason', '').strip()
+
+        if not rejection_reason:
+            messages.error(request, "Rejection reason is required.")
+            return redirect('admin_dashboard')
+
+        vendor.is_verified = False
+        vendor.kyc_rejection_reason = rejection_reason
+        vendor.save(update_fields=['is_verified', 'kyc_rejection_reason'])
+
+        Notification.objects.create(
+            user=vendor,
+            message=f"Your KYC was rejected. Reason: {rejection_reason}",
+            link="#"
+        )
+        messages.info(request, f"Vendor {vendor.phone_number} KYC rejected.")
+
+    return redirect('admin_dashboard')
+
+@staff_member_required
+def admin_update_user(request, user_id):
+    if request.method == 'POST':
+        target_user = get_object_or_404(User, id=user_id)
+        role = request.POST.get('role')
+        is_active = request.POST.get('is_active') == 'on'
+        is_verified = request.POST.get('is_verified') == 'on'
+
+        valid_roles = [choice[0] for choice in User.ROLE_CHOICES]
+        if role in valid_roles:
+            target_user.role = role
+
+        target_user.is_active = is_active
+        target_user.is_verified = is_verified
+        target_user.save()
+        messages.success(request, f"User {target_user.phone_number} updated.")
+
+    return redirect('admin_dashboard')
 
 @staff_member_required
 def admin_update_status(request, order_id):
@@ -111,7 +198,17 @@ def admin_update_status(request, order_id):
         valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
         if new_status in valid_statuses:
             order.status = new_status
+
+            if new_status == 'paid':
+                ensure_tracking_number(order)
+
             order.save()
+
+            if new_status == 'paid':
+                credit_vendors_for_paid_order(order)
+                reduce_stock_for_paid_order(order)
+                order.save(update_fields=['vendor_credit_processed', 'stock_deducted'])
+
             messages.success(request, f"Order #{order.id} updated to {order.get_status_display()}.")
         else:
             messages.error(request, "Invalid status selected.")
@@ -127,31 +224,51 @@ def vendor_notifications(request):
 
 @login_required
 def vendor_dashboard(request):
-    all_orders = Order.objects.all().select_related('customer')
-
-    # Ensure only vendors can access this
     if request.user.role != 'vendor':
         return redirect('home')
-    
-    # 1. Get all products belonging to this vendor
+
     my_products = Product.objects.filter(vendor=request.user)
-    
-    # 2. Get all OrderItems for these products (where payment is successful)
+
     vendor_sales = OrderItem.objects.filter(
         product__vendor=request.user,
         order__status__in=['paid', 'shipped', 'delivered']
     ).select_related('order', 'product')
 
-    # 3. Calculate Total Revenue (Price * Quantity)
+    vendor_orders = (
+        Order.objects
+        .filter(items__product__vendor=request.user, status__in=['paid', 'shipped', 'delivered'])
+        .select_related('customer')
+        .distinct()
+        .order_by('-created_at')
+    )
+
     total_revenue = vendor_sales.aggregate(
         total=Sum(F('price') * F('quantity'))
     )['total'] or 0
 
+    active_orders_count = vendor_orders.filter(status__in=['paid', 'shipped']).count()
+    low_stock_products = my_products.filter(stock__lte=F('low_stock_threshold')).order_by('stock')
+    has_kyc_details = all([
+        request.user.shop_name,
+        request.user.shop_address,
+        request.user.bank_name,
+        request.user.bank_account_name,
+        request.user.bank_account_number,
+        request.user.id_document,
+    ])
+
     context = {
         'products': my_products,
         'sales': vendor_sales,
+        'sold_items': vendor_sales.order_by('-order__created_at'),
         'total_revenue': total_revenue,
-        'orders': all_orders,
+        'orders': vendor_orders,
+        'active_orders_count': active_orders_count,
+        'total_products_count': my_products.count(),
+        'paid_orders_count': vendor_orders.filter(status='paid').count(),
+        'total_stock_quantity': my_products.aggregate(total=Sum('stock'))['total'] or 0,
+        'low_stock_products': low_stock_products,
+        'has_kyc_details': has_kyc_details,
     }
     return render(request, 'users/vendor_dashboard.html', context)
 
@@ -188,6 +305,10 @@ def request_payout(request):
     if request.user.role != 'vendor':
         return redirect('home')
 
+    if not request.user.bank_name or not request.user.bank_account_name or not request.user.bank_account_number:
+        messages.error(request, "Please complete your bank details in KYC before requesting payout.")
+        return redirect('vendor_kyc')
+
     if request.user.balance > 0:
         PayoutRequest.objects.create(
             vendor=request.user,
@@ -210,12 +331,16 @@ def vendor_kyc(request):
         user = request.user
         user.shop_name = request.POST.get('shop_name')
         user.shop_address = request.POST.get('shop_address')
+        user.bank_name = request.POST.get('bank_name')
+        user.bank_account_name = request.POST.get('bank_account_name')
+        user.bank_account_number = request.POST.get('bank_account_number')
+        user.kyc_rejection_reason = None
         
         if 'id_document' in request.FILES:
             user.id_document = request.FILES['id_document']
             
         user.save()
-        messages.success(request, "KYC Details submitted for review!")
+        messages.success(request, "KYC and bank details submitted for review!")
         return redirect('vendor_dashboard')
         
     return render(request, 'users/kyc_form.html')

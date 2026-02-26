@@ -10,9 +10,14 @@
             <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 180px; object-fit: cover;">
             <div class="card-body p-2 text-center">
                 <h6 class="card-title mb-1 text-truncate">{{ product.name }}</h6>
+                {% if product.discount_percentage > 0 %}
+                <span class="badge bg-danger mb-1">{{ product.discount_percentage|floatformat:0 }}% OFF</span>
+                <p class="text-muted mb-0"><small><s>{{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}</s></small></p>
+                {% endif %}
                 <p class="text-success fw-bold mb-0">
-                    {{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}
+                    {{ CURRENCY_SYMBOL }}{{ product.discounted_price|multiply:CURRENCY_RATE|floatformat:2 }}
                 </p>
+                <small class="text-muted d-block">Stock: {{ product.stock }}</small>
                 <small class="text-muted">~ £{{ product.selling_price|divide:rate|floatformat:2 }}</small>
                 <form action="{% url 'cart_add' product.id %}" method="post" class="mt-2">
                     {% csrf_token %}

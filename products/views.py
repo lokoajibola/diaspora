@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Product, Category
+from .models import Product, Category, ProductImage
 from .forms import ProductForm
 from django.db.models import Q
+from django.contrib import messages
 import requests
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -78,11 +79,59 @@ def add_product(request):
             product = form.save(commit=False)
             product.vendor = request.user # Automatically assign the vendor
             product.save()
+
+            additional_images = request.FILES.getlist('additional_images')
+            for image in additional_images:
+                ProductImage.objects.create(product=product, image=image)
+
             return redirect('vendor_dashboard')
     else:
         form = ProductForm()
     
     return render(request, 'products/add_product.html', {'form': form})
+
+
+@login_required
+def edit_product(request, product_id):
+    if request.user.role != 'vendor':
+        return redirect('home')
+
+    product = get_object_or_404(Product, id=product_id, vendor=request.user)
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+
+            additional_images = request.FILES.getlist('additional_images')
+            for image in additional_images:
+                ProductImage.objects.create(product=product, image=image)
+
+            return redirect('vendor_dashboard')
+    else:
+        form = ProductForm(instance=product)
+
+    gallery_images = product.images.all().order_by('created_at')
+    return render(request, 'products/edit_product.html', {
+        'form': form,
+        'product': product,
+        'gallery_images': gallery_images,
+    })
+
+
+@login_required
+def delete_product_image(request, product_id, image_id):
+    if request.user.role != 'vendor':
+        return redirect('home')
+
+    product = get_object_or_404(Product, id=product_id, vendor=request.user)
+    image = get_object_or_404(ProductImage, id=image_id, product=product)
+
+    if request.method == 'POST':
+        image.delete()
+        messages.success(request, "Product image deleted.")
+
+    return redirect('edit_product', product_id=product.id)
 
 def product_list(request):
     products = Product.objects.filter(is_active=True)
@@ -94,7 +143,7 @@ def product_list(request):
     })
     
 def set_currency(request):
-    currency = request.GET.get('currency', 'NGN')
+    currency = request.POST.get('currency') or request.GET.get('currency', 'NGN')
     if currency in ['NGN', 'GBP', 'USD']:
         request.session['currency'] = currency
     return redirect(request.META.get('HTTP_REFERER', 'home'))
@@ -136,4 +185,8 @@ def vendor_store(request, vendor_id):
 
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    return render(request, 'products/product_detail.html', {'product': product})
+    gallery_images = product.images.all().order_by('created_at')
+    return render(request, 'products/product_detail.html', {
+        'product': product,
+        'gallery_images': gallery_images,
+    })

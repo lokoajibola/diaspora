@@ -23,8 +23,12 @@ class User(AbstractUser,PermissionsMixin):
     # KYC Fields
     shop_name = models.CharField(max_length=255, blank=True, null=True)
     shop_address = models.TextField(blank=True, null=True)
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    bank_account_name = models.CharField(max_length=150, blank=True, null=True)
+    bank_account_number = models.CharField(max_length=30, blank=True, null=True)
     id_document = models.ImageField(upload_to='kyc/documents/', blank=True, null=True)
     is_verified = models.BooleanField(default=False) # Admin flips this switch
+    kyc_rejection_reason = models.TextField(blank=True, null=True)
 
     ROLE_CHOICES = (
         ('customer', 'Customer'),

@@ -31,12 +31,13 @@
                                     <input type="hidden" name="product_id" value="{{ item.product.id }}">
                                     <div class="input-group input-group-sm" style="width: 100px;">
                                         <select name="quantity" class="form-select form-select-sm" onchange="this.form.submit()">
-                                            {% for i in "12345678910"|make_list %}
-                                                <option value="{{ i }}" {% if item.quantity == i|add:0 %}selected{% endif %}>{{ i }}</option>
+                                            {% for i in item.product.stock|to_range %}
+                                                <option value="{{ i }}" {% if item.quantity == i %}selected{% endif %}>{{ i }}</option>
                                             {% endfor %}
                                         </select>
                                         <button type="submit" class="btn btn-outline-secondary">Update</button>
                                     </div>
+                                    <small class="text-muted d-block mt-1">Max: {{ item.product.stock }}</small>
                                 </form>
                             </td>
                             <td class="item-total">{{ CURRENCY_SYMBOL }}<span id="total-{{ item.product.id }}">

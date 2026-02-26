@@ -3,51 +3,138 @@
 {% load currency_tags %}
 
 {% block content %}
-<div class="container-fluid mt-3">
-    <div class="row">
-        <aside class="col-md-3 col-lg-2 collapse d-md-block border-end" id="sidebarFilters">
-            <div class="p-2">
-                <h5 class="fw-bold">Filters</h5>
-                <hr>
-                <h6>Categories</h6>
-                <ul class="list-unstyled ms-2">
-                    {% for cat in categories %}
-                    <li><a href="?category={{ cat.slug }}" class="text-decoration-none text-dark">{{ cat.name }}</a></li>
-                    {% endfor %}
-                </ul>
-                <hr>
-                <h6>New Arrivals</h6>
-                <a href="?sort=-created_at" class="btn btn-sm btn-outline-dark w-100 mb-2">Check Latest</a>
-            </div>
-        </aside>
+<style>
+    @media (max-width: 576px) {
+        .container-fluid.py-4 {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
 
-        <main class="col-md-9 col-lg-10">
-            <div id="heroSlider" class="carousel slide mb-4 shadow-sm" data-bs-ride="carousel">
-                <div class="carousel-inner rounded">
-                    <div class="carousel-item active bg-primary text-white p-5 text-center">
-                        <h2>DiasporaWay</h2>
-                        <p>From West Africa to your doorstep...</p>
+        .display-6 {
+            font-size: 1.65rem;
+        }
+
+        .card-body,
+        .card-header {
+            padding-left: 0.9rem !important;
+            padding-right: 0.9rem !important;
+        }
+
+        .carousel-item .p-5,
+        .carousel-item .p-4 {
+            padding: 1rem !important;
+        }
+
+        #products .row {
+            --bs-gutter-y: 0.85rem;
+        }
+    }
+</style>
+<div class="container-fluid py-4">
+    <section class="rounded-4 p-4 p-md-5 mb-4 bg-light border shadow-sm">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="badge bg-dark mb-3">International Commerce</span>
+                <h1 class="display-6 fw-bold mb-3">Global Marketplace for African Products</h1>
+                <p class="text-muted mb-4">
+                    Shop trusted products from verified vendors with secure payment, transparent order tracking,
+                    and cross-border delivery support.
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="#products" class="btn btn-primary">Shop Products</a>
+                    <a href="?sort=-created_at" class="btn btn-outline-dark">New Arrivals</a>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Why Shop With Us</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Verified Vendors</span>
+                            <span class="badge bg-success">KYC Approved</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Secure Checkout</span>
+                            <span class="badge bg-primary">Paystack</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Order Tracking</span>
+                            <span class="badge bg-info text-dark">Live Status</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="mb-4">
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div id="heroSlider" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#heroSlider" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                    {% for promo in promoted_products %}
+                    <button type="button" data-bs-target="#heroSlider" data-bs-slide-to="{{ forloop.counter }}" aria-label="Slide {{ forloop.counter|add:1 }}"></button>
+                    {% endfor %}
+                </div>
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <div class="p-5 bg-dark text-white text-center">
+                            <h2 class="fw-bold">DiasporaWay</h2>
+                            <p class="mb-0">Premium African products delivered globally.</p>
+                        </div>
                     </div>
                     {% for promo in promoted_products %}
-                    <div class="carousel-item bg-light p-0 text-center">
-                        <div class="row align-items-center g-0">
-                            <div class="col-md-6">
-                                <img src="{{ promo.image.url }}" class="img-fluid" alt="{{ promo.name }}" style="max-height: 300px;">
+                    <div class="carousel-item">
+                        <div class="row g-0 align-items-center bg-white">
+                            <div class="col-md-5 text-center p-3">
+                                <img src="{{ promo.image.url }}" class="img-fluid rounded" alt="{{ promo.name }}" style="max-height: 320px; object-fit: cover;">
                             </div>
-                            <div class="col-md-6 p-4">
-                                <span class="badge bg-warning text-dark mb-2">Featured</span>
-                                <h3>{{ promo.name }}</h3>
-                                <p class="text-muted">{{ promo.description|truncatechars:100 }}</p>
+                            <div class="col-md-7 p-4 p-lg-5">
+                                <span class="badge bg-warning text-dark mb-2">Featured Product</span>
+                                <h3 class="fw-bold">{{ promo.name }}</h3>
+                                <p class="text-muted">{{ promo.description|truncatechars:140 }}</p>
                                 <a href="{% url 'product_detail' promo.id %}" class="btn btn-dark">Shop Now</a>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#heroSlider" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#heroSlider" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
             </div>
+        </div>
+    </section>
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4>Explore Products</h4>
-                <form method="GET" class="d-flex">
+    <section class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <h5 class="fw-bold mb-0">Browse by Category</h5>
+                <a href="?sort=-created_at" class="btn btn-sm btn-outline-dark">View Latest</a>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                {% for cat in categories %}
+                <a href="?category={{ cat.slug }}" class="btn btn-sm btn-outline-secondary">{{ cat.name }}</a>
+                {% empty %}
+                <span class="text-muted small">No categories available.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section id="products" class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 pt-4 pb-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h4 class="fw-bold mb-1">Explore Products</h4>
+                    <p class="text-muted mb-0">Curated listings from verified sellers.</p>
+                </div>
+                <form method="GET" class="d-flex gap-2 align-items-center">
                     <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="-created_at">Newest First</option>
                         <option value="base_price">Price: Low to High</option>
@@ -55,22 +142,39 @@
                     </select>
                 </form>
             </div>
-
-            <div class="row row-cols-1 row-cols-md-3 g-4">
+        </div>
+        <div class="card-body">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
                 {% for product in products %}
                 <div class="col">
-                    <div class="card h-100 shadow-sm product-card">
-                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">{{ product.name }}</h5>
-                            <p class="text-success fw-bold">{{ CURRENCY_SYMBOL }}{{ product.total_price|multiply:CURRENCY_RATE|floatformat:2 }}</p>
-                            <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm">View Details</a>
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="ratio ratio-4x3 bg-light rounded-top">
+                            <img src="{{ product.image.url }}" class="w-100 h-100 rounded-top" alt="{{ product.name }}" style="object-fit: cover;">
                         </div>
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="fw-bold mb-2">{{ product.name }}</h6>
+                            <p class="text-muted small mb-2">{{ product.description|truncatechars:70 }}</p>
+                            {% if product.discount_percentage > 0 %}
+                            <div class="mb-2">
+                                <span class="badge bg-danger">{{ product.discount_percentage|floatformat:0 }}% OFF</span>
+                            </div>
+                            <p class="mb-1 text-muted small"><s>{{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}</s></p>
+                            {% endif %}
+                            <p class="text-success fw-bold mb-2">{{ CURRENCY_SYMBOL }}{{ product.discounted_price|multiply:CURRENCY_RATE|floatformat:2 }}</p>
+                            <small class="text-muted mb-3">Stock: {{ product.stock }}</small>
+                            <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm mt-auto">View Details</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-light border text-center mb-0">
+                        No products available yet. Please check back shortly.
                     </div>
                 </div>
                 {% endfor %}
             </div>
-        </main>
-    </div>
+        </div>
+    </section>
 </div>
 {% endblock %}

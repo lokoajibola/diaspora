@@ -13,13 +13,18 @@ class Cart:
 
     def add(self, product, quantity=1, override_quantity=False):
         product_id = str(product.id)
+        if product.stock < 1 or not product.is_active:
+            return
+
         if product_id not in self.cart:
-            self.cart[product_id] = {'quantity': 0, 'price': str(product.base_price)}
+            self.cart[product_id] = {'quantity': 0, 'price': str(product.discounted_price)}
+        else:
+            self.cart[product_id]['price'] = str(product.discounted_price)
         
         if override_quantity:
-            self.cart[product_id]['quantity'] = quantity
+            self.cart[product_id]['quantity'] = min(quantity, product.stock)
         else:
-            self.cart[product_id]['quantity'] += quantity
+            self.cart[product_id]['quantity'] = min(self.cart[product_id]['quantity'] + quantity, product.stock)
             
         self.save()
 

@@ -7,6 +7,15 @@ class PayoutRequest(models.Model):
     vendor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     is_paid = models.BooleanField(default=False)
+    transfer_reference = models.CharField(max_length=120, blank=True, null=True)
+    paid_at = models.DateTimeField(blank=True, null=True)
+    processed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='processed_payouts'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -36,6 +45,8 @@ class Order(models.Model):
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     tracking_number = models.CharField(max_length=100, blank=True, null=True)
+    vendor_credit_processed = models.BooleanField(default=False)
+    stock_deducted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

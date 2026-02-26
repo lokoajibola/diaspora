@@ -11,6 +11,9 @@ urlpatterns = [
     path('notifications/', views.vendor_notifications, name='vendor_notifications'),
     path('logistics-dashboard/', views.logistics_dashboard, name='logistics_dashboard'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin/vendors/<int:user_id>/approve-kyc/', views.admin_approve_vendor_kyc, name='admin_approve_vendor_kyc'),
+    path('admin/vendors/<int:user_id>/reject-kyc/', views.admin_reject_vendor_kyc, name='admin_reject_vendor_kyc'),
+    path('admin/users/<int:user_id>/update/', views.admin_update_user, name='admin_update_user'),
     
     # Also add the status update URL we talked about earlier
     path('admin/order/<int:order_id>/update-status/', views.admin_update_status, name='admin_update_status'),
