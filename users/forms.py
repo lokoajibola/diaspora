@@ -8,7 +8,7 @@ class CustomerRegistrationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ("phone_number", "role", "first_name", "last_name")
+        fields = ("phone_number", "role", "country", "first_name", "last_name")
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

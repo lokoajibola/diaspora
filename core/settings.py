@@ -174,11 +174,23 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Add this to your settings
+# Base prices are stored in NGN and converted for display with these static rates.
+CURRENCIES = {
+    'NGN': {'name': 'Nigerian Naira', 'symbol': '₦'},
+    'GHC': {'name': 'Ghana Cedi', 'symbol': 'GH₵'},
+    'GBP': {'name': 'British Pound', 'symbol': '£'},
+    'USD': {'name': 'US Dollar', 'symbol': '$'},
+    'CAD': {'name': 'Canadian Dollar', 'symbol': 'C$'},
+    'EUR': {'name': 'Euro', 'symbol': '€'},
+}
+
 EXCHANGE_RATES = {
-    'NGN': 1.0,      # Base currency
-    'GBP': 0.00055,  # Example: 1 NGN = 0.00055 GBP (Update dynamically via API later)
-    'USD': 0.00070,  # Example: 1 NGN = 0.00070 USD
+    'NGN': 1.0,
+    'GHC': 0.0085,
+    'GBP': 0.00052,
+    'USD': 0.00066,
+    'CAD': 0.00090,
+    'EUR': 0.00061,
 }
 
 # Security Keys (Keep secret in production)

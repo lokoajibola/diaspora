@@ -35,7 +35,7 @@
                 </table>
             </div>
             <div class="text-end">
-                <h5>Total: ₦{{ cart.get_total_price }}</h5>
+                <h5>Total: {{ CURRENCY_SYMBOL }}{{ cart.get_total_price|multiply:CURRENCY_RATE|floatformat:2 }}</h5>
                 <a href="{% url 'checkout' %}" class="btn btn-success btn-lg">Proceed to Checkout</a>
             </div>
         {% else %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load currency_tags %}
 
 {% block content %}
 <div class="container py-5">
@@ -21,7 +22,7 @@
                     <td>#{{ order.id }}</td>
                     <td>{{ order.created_at|date:"d M Y" }}</td>
                     <td>{{ order.receiver_name }}</td>
-                    <td>{{ CURRENCY_SYMBOL }}{{ order.total_amount|floatformat:2 }}</td>
+                    <td>{{ CURRENCY_SYMBOL }}{{ order.total_amount|multiply:CURRENCY_RATE|floatformat:2 }}</td>
                     <td>
                         <span class="badge {% if order.status == 'paid' %}bg-success{% elif order.status == 'shipped' %}bg-info{% else %}bg-warning{% endif %}">
                             {{ order.status|title }}

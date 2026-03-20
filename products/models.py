@@ -10,8 +10,13 @@ class Category(models.Model):
         return self.name
 
 class Product(models.Model):
+    class CountryChoices(models.TextChoices):
+        NIGERIA = 'NG', 'Nigeria'
+        GHANA = 'GH', 'Ghana'
+
     vendor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'role': 'vendor'})
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    country = models.CharField(max_length=2, choices=CountryChoices.choices, default=CountryChoices.NIGERIA)
     name = models.CharField(max_length=255)
     description = models.TextField()
     base_price = models.DecimalField(max_digits=12, decimal_places=2)  # Price vendor receives

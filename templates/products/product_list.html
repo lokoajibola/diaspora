@@ -3,6 +3,12 @@
 
 
 {% block content %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-sm {% if selected_country == 'NG' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?country=NG">Nigeria</a>
+    <a class="btn btn-sm {% if selected_country == 'GH' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?country=GH">Ghana</a>
+    <a class="btn btn-sm btn-outline-secondary" href="?">All Countries</a>
+</div>
+
 <div class="row g-3">
     {% for product in products %}
     <div class="col-6 col-md-4 col-lg-3">
@@ -10,10 +16,10 @@
             <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 180px; object-fit: cover;">
             <div class="card-body p-2 text-center">
                 <h6 class="card-title mb-1 text-truncate">{{ product.name }}</h6>
+                <small class="text-muted d-block">{{ product.get_country_display }}</small>
                 <p class="text-success fw-bold mb-0">
                     {{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}
                 </p>
-                <small class="text-muted">~ £{{ product.selling_price|divide:rate|floatformat:2 }}</small>
                 <form action="{% url 'cart_add' product.id %}" method="post" class="mt-2">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-primary w-100">Add to Cart</button>

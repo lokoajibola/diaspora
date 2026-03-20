@@ -14,55 +14,158 @@
     </div>
 </div>
 
-<div class="container py-5">
-    <div class="row text-center g-4">
-        <div class="col-md-4">
-            <div class="p-3 shadow-sm rounded bg-white h-100">
-                <div class="fs-1 text-primary mb-2">🛒</div>
-                <h5>Select Items</h5>
-                <p class="text-muted">Pick groceries, fashion, or essentials from verified West African vendors.</p>
+<div class="container pb-4">
+    <div class="row g-3 text-center">
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <h6 class="mb-1">Same Week Dispatch</h6>
+                    <small class="text-muted">Priority packing from vetted vendors</small>
+                </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="p-3 shadow-sm rounded bg-white h-100">
-                <div class="fs-1 text-primary mb-2">💳</div>
-                <h5>Secure Payment</h5>
-                <p class="text-muted">Pay in {{ CURRENCY_CODE }} using Paystack. No hidden fees, just direct markups.</p>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <h6 class="mb-1">Secure Checkout</h6>
+                    <small class="text-muted">Pay in {{ CURRENCY_CODE }} with transparent pricing</small>
+                </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="p-3 shadow-sm rounded bg-white h-100">
-                <div class="fs-1 text-primary mb-2">✈️</div>
-                <h5>Track Delivery</h5>
-                <p class="text-muted">Watch your package move from the local hub to your international address.</p>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <h6 class="mb-1">Live Tracking</h6>
+                    <small class="text-muted">Monitor each stage of your delivery</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <h6 class="mb-1">Multiple Regions</h6>
+                    <small class="text-muted">UK, US and Canada shipping options</small>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <div id="shop" class="container py-5">
-    <h3 class="mb-4">Latest from West Africa</h3>
-    <div class="row g-3">
-        {% for product in products %}
-        <div class="col-6 col-md-3">
-            <div class="card h-100 border-0 shadow-sm product-card">
-                <a href="{% url 'product_detail' product.id %}"><img src="{{ product.image.url }}" class="card-img-top" style="height: 180px; object-fit: cover;"></a>
+    <div class="row g-4">
+        <aside class="col-12 col-lg-3">
+            <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
-                    <small class="text-muted">Sold by: 
-                        <a href="{% url 'vendor_store' product.vendor.id %}">{{ product.vendor.first_name }}</a>
-                    </small>
-                    <h6 class="text-truncate">{{ product.name }}</h6>
-                    <p class="text-success fw-bold">
-                        {{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}
-                    </p>
-                    <form action="{% url 'cart_add' product.id %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-primary w-100">Add to Cart</button>
+                    <h5 class="card-title mb-3">Categories</h5>
+                    <a href="{% url 'home' %}?{% if query %}q={{ query }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}{% if min_price %}min_price={{ min_price }}&{% endif %}{% if max_price %}max_price={{ max_price }}&{% endif %}{% if selected_country %}country={{ selected_country }}{% endif %}" class="d-flex justify-content-between align-items-center text-decoration-none py-2 {% if not selected_category %}fw-bold text-primary{% else %}text-dark{% endif %}">
+                        <span>All categories</span>
+                    </a>
+                    {% for category in categories %}
+                    <a href="{% url 'home' %}?category={{ category.slug }}{% if query %}&q={{ query }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_country %}&country={{ selected_country }}{% endif %}" class="d-flex justify-content-between align-items-center text-decoration-none py-2 {% if selected_category == category.slug %}fw-bold text-primary{% else %}text-dark{% endif %}">
+                        <span>{{ category.name }}</span>
+                        <span class="badge rounded-pill bg-light text-dark">{{ category.active_product_count }}</span>
+                    </a>
+                    {% empty %}
+                    <p class="text-muted mb-0">No categories available yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h6 class="mb-3">Delivery Options</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2">Standard (5-10 business days)</li>
+                        <li class="mb-2">Priority (3-5 business days)</li>
+                        <li>Economy Consolidation</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-3">Popular Shopping Options</h6>
+                    <div class="d-grid gap-2">
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'home' %}?sort=price_low{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_country %}&country={{ selected_country }}{% endif %}">Budget Picks</a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'home' %}?sort=latest{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_country %}&country={{ selected_country }}{% endif %}">New Arrivals</a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'home' %}?sort=name_asc{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_country %}&country={{ selected_country }}{% endif %}">A to Z Listings</a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-12 col-lg-9">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <form method="get" action="{% url 'home' %}" class="row g-2 align-items-end">
+                        <div class="col-12 col-md-3">
+                            <label class="form-label mb-1">Sort by</label>
+                            <select name="sort" class="form-select">
+                                <option value="latest" {% if sort_by == 'latest' %}selected{% endif %}>Latest</option>
+                                <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest</option>
+                                <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                                <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                                <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name: A to Z</option>
+                                <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Name: Z to A</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="form-label mb-1">Country</label>
+                            <select name="country" class="form-select">
+                                <option value="">All countries</option>
+                                <option value="NG" {% if selected_country == 'NG' %}selected{% endif %}>Nigeria</option>
+                                <option value="GH" {% if selected_country == 'GH' %}selected{% endif %}>Ghana</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label mb-1">Min price ({{ CURRENCY_CODE }})</label>
+                            <input type="number" step="0.01" name="min_price" class="form-control" value="{{ min_price|default:'' }}" placeholder="0">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label mb-1">Max price ({{ CURRENCY_CODE }})</label>
+                            <input type="number" step="0.01" name="max_price" class="form-control" value="{{ max_price|default:'' }}" placeholder="50000">
+                        </div>
+                        <div class="col-12 col-md-3 d-grid">
+                            {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+                            {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+                            <button type="submit" class="btn btn-primary">Apply Options</button>
+                        </div>
                     </form>
                 </div>
             </div>
-        </div>
-        {% endfor %}
+
+            <h3 class="mb-4">Latest from West Africa</h3>
+            <div class="row g-3">
+                {% for product in products %}
+                <div class="col-6 col-md-4 col-xl-3">
+                    <div class="card h-100 border-0 shadow-sm product-card">
+                        <a href="{% url 'product_detail' product.id %}"><img src="{{ product.image.url }}" class="card-img-top" style="height: 180px; object-fit: cover;"></a>
+                        <div class="card-body">
+                            <small class="text-muted d-block mb-1">Category: {{ product.category.name }}</small>
+                            <small class="text-muted d-block mb-1">Country: {{ product.get_country_display }}</small>
+                            <small class="text-muted">Sold by: 
+                                <a href="{% url 'vendor_store' product.vendor.id %}">{{ product.vendor.first_name }}</a>
+                            </small>
+                            <h6 class="text-truncate mt-1">{{ product.name }}</h6>
+                            <p class="text-success fw-bold mb-2">
+                                {{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}
+                            </p>
+                            <form action="{% url 'cart_add' product.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-primary w-100">Add to Cart</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-light border" role="alert">
+                        No products match your current options. Try changing category or price filters.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
     </div>
 </div>
 {% endblock %}

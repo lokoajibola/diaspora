@@ -4,13 +4,13 @@ from .models import User
 
 class CustomUserAdmin(UserAdmin):
     model = User
-    list_display = ['phone_number', 'role', 'is_staff', 'is_active']
-    list_filter = ['role', 'is_staff', 'is_active']
+    list_display = ['phone_number', 'role', 'country', 'is_staff', 'is_active']
+    list_filter = ['role', 'country', 'is_staff', 'is_active']
     
     # This fixes the "Unknown field username" error
     fieldsets = (
         (None, {'fields': ('phone_number', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'country')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('Role Information', {'fields': ('role',)}),
@@ -20,7 +20,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('phone_number', 'password', 'role', 'is_staff', 'is_active'),
+            'fields': ('phone_number', 'password', 'role', 'country', 'is_staff', 'is_active'),
         }),
     )
     

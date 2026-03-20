@@ -16,6 +16,10 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(phone_number, password, **extra_fields)
 
 class User(AbstractUser):
+    class CountryChoices(models.TextChoices):
+        NIGERIA = 'NG', 'Nigeria'
+        GHANA = 'GH', 'Ghana'
+
     username = None  # Remove username field
     phone_number = models.CharField(max_length=15, unique=True)
     
@@ -26,6 +30,7 @@ class User(AbstractUser):
         ('admin', 'Admin'),
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer')
+    country = models.CharField(max_length=2, choices=CountryChoices.choices, default=CountryChoices.NIGERIA)
     
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = []

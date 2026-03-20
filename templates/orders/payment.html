@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load currency_tags %}
 
 {% block content %}
 <div class="container py-5 text-center">
@@ -8,8 +9,11 @@
         <hr>
         <div class="d-flex justify-content-between mb-3">
             <span>Total Amount:</span>
-            <strong class="text-primary">{{ CURRENCY_SYMBOL }}{{ order.total_amount|floatformat:2 }}</strong>
+          <strong class="text-primary">{{ CURRENCY_SYMBOL }}{{ order.total_amount|multiply:CURRENCY_RATE|floatformat:2 }}</strong>
         </div>
+        {% if CURRENCY_CODE != 'NGN' %}
+        <p class="text-muted small mb-3">Paystack will still charge the base NGN amount for this order.</p>
+        {% endif %}
 
         <button type="button" class="btn btn-success btn-lg w-100" onclick="payWithPaystack()"> 
             Pay Now 
