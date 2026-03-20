@@ -15,3 +15,14 @@ def multiply(value, arg):
         return float(value) * float(arg)
     except (ValueError, TypeError):
         return value
+
+
+@register.filter
+def to_range(value):
+    try:
+        upper = int(value)
+        if upper < 1:
+            return [1]
+        return range(1, upper + 1)
+    except (ValueError, TypeError):
+        return [1]

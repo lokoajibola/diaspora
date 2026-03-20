@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% load currency_tags %}
 
-
 {% block content %}
 <div class="d-flex flex-wrap gap-2 mb-3">
     <a class="btn btn-sm {% if selected_country == 'NG' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?country=NG">Nigeria</a>
@@ -17,9 +16,14 @@
             <div class="card-body p-2 text-center">
                 <h6 class="card-title mb-1 text-truncate">{{ product.name }}</h6>
                 <small class="text-muted d-block">{{ product.get_country_display }}</small>
+                {% if product.discount_percentage > 0 %}
+                <span class="badge bg-danger mb-1">{{ product.discount_percentage|floatformat:0 }}% OFF</span>
+                <p class="text-muted mb-0"><small><s>{{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}</s></small></p>
+                {% endif %}
                 <p class="text-success fw-bold mb-0">
-                    {{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}
+                    {{ CURRENCY_SYMBOL }}{{ product.discounted_price|multiply:CURRENCY_RATE|floatformat:2 }}
                 </p>
+                <small class="text-muted d-block">Stock: {{ product.stock }}</small>
                 <form action="{% url 'cart_add' product.id %}" method="post" class="mt-2">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-primary w-100">Add to Cart</button>
@@ -27,6 +31,8 @@
             </div>
         </div>
     </div>
+    {% empty %}
+    <div class="col-12"><div class="alert alert-light border">No products available.</div></div>
     {% endfor %}
 </div>
 {% endblock %}

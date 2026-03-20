@@ -21,4 +21,5 @@ def currency_processor(request):
         'CURRENCY_RATE': rate,
         'selected_currency': selected_currency,
         'currencies': currencies,
+        'CURRENCY': selected_currency,
     }

@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load currency_tags %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Admin Dashboard</h2>
+            <p class="text-muted mb-0">Manage users, orders, delivery workflow, and vendor bank payouts.</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="mb-1">Revenue</h6>
+                    <h4 class="mb-0">{{ CURRENCY_SYMBOL }}{{ revenue|multiply:CURRENCY_RATE|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="mb-1">Orders</h6>
+                    <h4 class="mb-0">{{ order_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-dark text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="mb-1">Vendors</h6>
+                    <h4 class="mb-0">{{ vendor_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="mb-1">Customers</h6>
+                    <h4 class="mb-0">{{ customer_count }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-warning">
+        <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Vendor KYC Review (Pending Only)</h5>
+            <span class="badge bg-warning text-dark">{{ pending_kyc_count }} Pending</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Vendor</th>
+                        <th>Shop</th>
+                        <th>Address</th>
+                        <th>ID Document</th>
+                        <th>Bank Details</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vendor in pending_kyc_vendors %}
+                    <tr>
+                        <td>{{ vendor.phone_number }}</td>
+                        <td>{{ vendor.shop_name|default:'-' }}</td>
+                        <td><small>{{ vendor.shop_address|default:'-'|truncatechars:35 }}</small></td>
+                        <td>
+                            {% if vendor.id_document %}
+                                <a href="{{ vendor.id_document.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">View ID</a>
+                            {% else %}
+                                <span class="text-danger small">Missing</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if vendor.bank_name and vendor.bank_account_name and vendor.bank_account_number %}
+                                <small>{{ vendor.bank_name }} / {{ vendor.bank_account_name }} / {{ vendor.bank_account_number }}</small>
+                            {% else %}
+                                <span class="text-danger small">Incomplete</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form action="{% url 'admin_approve_vendor_kyc' vendor.id %}" method="POST" class="d-inline me-2">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-warning" {% if not vendor.id_document %}disabled{% endif %}>Approve KYC</button>
+                            </form>
+                            <form action="{% url 'admin_reject_vendor_kyc' vendor.id %}" method="POST" class="d-flex mt-2">
+                                {% csrf_token %}
+                                <input type="text" name="rejection_reason" class="form-control form-control-sm me-2" placeholder="Reason for rejection" required>
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No pending vendor KYC records.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white border-0 pt-3">
+            <h5 class="fw-bold mb-0">User Management</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Active</th>
+                        <th>Verified</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in managed_users %}
+                    <tr>
+                        <td>
+                            <form id="user-update-{{ account.id }}" action="{% url 'admin_update_user' account.id %}" method="POST" class="d-none">
+                                {% csrf_token %}
+                            </form>
+                            {{ account.phone_number }}
+                        </td>
+                        <td>{{ account.email|default:"-" }}</td>
+                        <td>
+                            <select name="role" class="form-select form-select-sm" form="user-update-{{ account.id }}">
+                                {% for role_code, role_label in account.ROLE_CHOICES %}
+                                    <option value="{{ role_code }}" {% if account.role == role_code %}selected{% endif %}>{{ role_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="checkbox" name="is_active" form="user-update-{{ account.id }}" {% if account.is_active %}checked{% endif %}></td>
+                        <td><input type="checkbox" name="is_verified" form="user-update-{{ account.id }}" {% if account.is_verified %}checked{% endif %}></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" type="submit" form="user-update-{{ account.id }}">Save</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Order Management</h5>
+            <form class="d-flex" method="GET">
+                <input class="form-control form-control-sm me-2" type="search" name="q" value="{{ query }}" placeholder="Search order, buyer, address...">
+                <button class="btn btn-sm btn-primary" type="submit">Search</button>
+            </form>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Order</th>
+                        <th>Buyer</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Tracking</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.receiver_name }}</td>
+                        <td><small>{{ order.delivery_address|truncatechars:35 }}</small></td>
+                        <td>
+                            <form action="{% url 'admin_update_status' order.id %}" method="POST">
+                                {% csrf_token %}
+                                <select name="status" onchange="this.form.submit()" class="form-select form-select-sm">
+                                    {% for code, label in order.STATUS_CHOICES %}
+                                        <option value="{{ code }}" {% if order.status == code %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </td>
+                        <td>{{ order.tracking_number|default:'-' }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No orders found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white border-0 pt-3">
+            <h5 class="fw-bold mb-0">Delivery Queue</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Country</th>
+                        <th>Status</th>
+                        <th>Last Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in delivery_queue %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.receiver_name }}</td>
+                        <td>{{ order.country }}</td>
+                        <td>{{ order.get_status_display }}</td>
+                        <td>{{ order.updated_at|date:"M d, Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No orders currently in delivery queue.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <div class="card bg-warning-subtle border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-1">Pending Vendor Payouts</h6>
+                    <h4 class="mb-0">{{ CURRENCY_SYMBOL }}{{ pending_payout_total|multiply:CURRENCY_RATE|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success-subtle border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-1">Transferred to Vendors</h6>
+                    <h4 class="mb-0">{{ CURRENCY_SYMBOL }}{{ transferred_total|multiply:CURRENCY_RATE|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white border-0 pt-3">
+            <h5 class="fw-bold mb-0">Finance: Vendor Bank Transfers</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Vendor</th>
+                        <th>Bank</th>
+                        <th>Account</th>
+                        <th>Amount</th>
+                        <th>Transfer Ref</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payout in payout_requests %}
+                    <tr>
+                        <td>
+                            <form id="payout-approve-{{ payout.id }}" action="{% url 'approve_payout' payout.id %}" method="POST" class="d-none">
+                                {% csrf_token %}
+                            </form>
+                            <div>{{ payout.vendor.shop_name|default:payout.vendor.phone_number }}</div>
+                            <small class="text-muted">{{ payout.vendor.phone_number }}</small>
+                        </td>
+                        <td>{{ payout.vendor.bank_name|default:'Missing' }}</td>
+                        <td>
+                            {% if payout.vendor.bank_account_number %}
+                                {{ payout.vendor.bank_account_name }} - {{ payout.vendor.bank_account_number }}
+                            {% else %}
+                                <span class="text-danger">Missing bank details</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ CURRENCY_SYMBOL }}{{ payout.amount|multiply:CURRENCY_RATE|floatformat:2 }}</td>
+                        <td>
+                            <input type="text" name="transfer_reference" class="form-control form-control-sm" placeholder="Bank transfer reference" form="payout-approve-{{ payout.id }}" required>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-success" form="payout-approve-{{ payout.id }}" {% if not payout.vendor.bank_account_number %}disabled{% endif %}>Mark Transferred</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No pending payout requests.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white border-0 pt-3">
+            <h5 class="fw-bold mb-0">Recent Transfer History</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Vendor</th>
+                        <th>Amount</th>
+                        <th>Transfer Ref</th>
+                        <th>Paid At</th>
+                        <th>Processed By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payout in recent_transfers %}
+                    <tr>
+                        <td>{{ payout.vendor.shop_name|default:payout.vendor.phone_number }}</td>
+                        <td>{{ CURRENCY_SYMBOL }}{{ payout.amount|multiply:CURRENCY_RATE|floatformat:2 }}</td>
+                        <td>{{ payout.transfer_reference|default:'-' }}</td>
+                        <td>{{ payout.paid_at|date:"M d, Y H:i" }}</td>
+                        <td>{{ payout.processed_by.phone_number|default:'System' }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No transfers processed yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

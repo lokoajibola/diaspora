@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Vendor Verification (KYC)</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.is_verified %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-patch-check-fill"></i> Your account is verified.
+                        </div>
+                    {% elif user.kyc_rejection_reason %}
+                        <div class="alert alert-danger">
+                            <strong>KYC Rejected:</strong> {{ user.kyc_rejection_reason }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            Your account is currently <strong>Pending Verification</strong>.
+                        </div>
+                    {% endif %}
+
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Shop Name</label>
+                            <input type="text" name="shop_name" class="form-control" value="{{ user.shop_name|default:'' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Shop/Warehouse Address</label>
+                            <textarea name="shop_address" class="form-control" rows="3" required>{{ user.shop_address|default:'' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Bank Name</label>
+                            <input type="text" name="bank_name" class="form-control" value="{{ user.bank_name|default:'' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Account Name</label>
+                            <input type="text" name="bank_account_name" class="form-control" value="{{ user.bank_account_name|default:'' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Account Number</label>
+                            <input type="text" name="bank_account_number" class="form-control" value="{{ user.bank_account_number|default:'' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Upload Government ID / Business Reg</label>
+                            <input type="file" name="id_document" class="form-control">
+                            {% if user.id_document %}
+                                <small class="text-muted">Currently: <a href="{{ user.id_document.url }}" target="_blank">View Uploaded ID</a></small>
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" {% if user.is_verified %}disabled{% endif %}>
+                            Submit for Review
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

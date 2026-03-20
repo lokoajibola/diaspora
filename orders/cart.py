@@ -1,19 +1,41 @@
 from products.models import Product
 from decimal import Decimal
+from django.conf import settings
+
 
 class Cart:
     def __init__(self, request):
         self.session = request.session
-        cart = self.session.get('cart')
+        cart = self.session.get(settings.CART_SESSION_ID)
         if not cart:
-            cart = self.session['cart'] = {}
+            cart = self.session[settings.CART_SESSION_ID] = {}
         self.cart = cart
 
-    def add(self, product, quantity=1):
+    def add(self, product, quantity=1, override_quantity=False):
         product_id = str(product.id)
+        if product.stock < 1 or not product.is_active:
+            return
+
         if product_id not in self.cart:
-            self.cart[product_id] = {'price': str(product.base_price), 'quantity': 0}
-        self.cart[product_id]['quantity'] += quantity
+            self.cart[product_id] = {'quantity': 0, 'price': str(product.discounted_price)}
+        else:
+            self.cart[product_id]['price'] = str(product.discounted_price)
+        
+        if override_quantity:
+            self.cart[product_id]['quantity'] = min(quantity, product.stock)
+        else:
+            self.cart[product_id]['quantity'] = min(self.cart[product_id]['quantity'] + quantity, product.stock)
+            
+        self.save()
+
+    # --- ADD THIS METHOD ---
+    def clear(self):
+        """Remove the cart from the session"""
+        if settings.CART_SESSION_ID in self.session:
+            del self.session[settings.CART_SESSION_ID]
+            self.save()
+    
+    def save(self):
         self.session.modified = True
 
     def remove(self, product):

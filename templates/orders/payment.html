@@ -9,15 +9,13 @@
         <hr>
         <div class="d-flex justify-content-between mb-3">
             <span>Total Amount:</span>
-          <strong class="text-primary">{{ CURRENCY_SYMBOL }}{{ order.total_amount|multiply:CURRENCY_RATE|floatformat:2 }}</strong>
+            <strong class="text-primary">{{ CURRENCY_SYMBOL }}{{ order.total_amount|multiply:CURRENCY_RATE|floatformat:2 }}</strong>
         </div>
         {% if CURRENCY_CODE != 'NGN' %}
         <p class="text-muted small mb-3">Paystack will still charge the base NGN amount for this order.</p>
         {% endif %}
 
-        <button type="button" class="btn btn-success btn-lg w-100" onclick="payWithPaystack()"> 
-            Pay Now 
-        </button>
+        <button type="button" class="btn btn-success btn-lg w-100" onclick="payWithPaystack()">Pay Now</button>
     </div>
 </div>
 
@@ -25,13 +23,12 @@
 <script>
   function payWithPaystack() {
     let handler = PaystackPop.setup({
-      key: '{{ paystack_public_key }}', // Your Public Key
+      key: '{{ paystack_public_key }}',
       email: '{{ email }}',
-      amount: {{ paystack_amount }}, // Amount in Kobo
+      amount: {{ paystack_amount }},
       currency: 'NGN',
-      ref: 'LOKO_' + Math.floor((Math.random() * 1000000000) + 1), // Generate random ref
+      ref: 'LOKO_' + Math.floor((Math.random() * 1000000000) + 1),
       callback: function(response) {
-        // This runs after successful payment
         window.location.href = "{% url 'payment_success' %}?reference=" + response.reference;
       },
       onClose: function() {

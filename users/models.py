@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
@@ -19,10 +20,19 @@ class User(AbstractUser):
     class CountryChoices(models.TextChoices):
         NIGERIA = 'NG', 'Nigeria'
         GHANA = 'GH', 'Ghana'
-
     username = None  # Remove username field
     phone_number = models.CharField(max_length=15, unique=True)
-    
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    # KYC Fields
+    shop_name = models.CharField(max_length=255, blank=True, null=True)
+    shop_address = models.TextField(blank=True, null=True)
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    bank_account_name = models.CharField(max_length=150, blank=True, null=True)
+    bank_account_number = models.CharField(max_length=30, blank=True, null=True)
+    id_document = models.ImageField(upload_to='kyc/documents/', blank=True, null=True)
+    is_verified = models.BooleanField(default=False) # Admin flips this switch
+    kyc_rejection_reason = models.TextField(blank=True, null=True)
+
     ROLE_CHOICES = (
         ('customer', 'Customer'),
         ('vendor', 'Vendor'),
@@ -39,3 +49,14 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.phone_number} ({self.role})"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    message = models.TextField()
+    link = models.CharField(max_length=255, blank=True, null=True) # Click to go to order
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
