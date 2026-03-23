@@ -1,0 +1,38 @@
+.tracking-wrapper {
+    position: relative;
+    padding: 20px 0;
+}
+
+.tracking-bar {
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.tracking-status-dot {
+    width: 15px;
+    height: 15px;
+    background-color: #dee2e6;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+
+.dot-active {
+    background-color: #198754;
+    box-shadow: 0 0 8px rgba(25, 135, 84, 0.5);
+}
+
+/* Positioning for 5 stages */
+.dot-1 { left: 0%; }
+.dot-2 { left: 25%; }
+.dot-3 { left: 50%; }
+.dot-4 { left: 75%; }
+.dot-5 { left: 100%; transform: translate(-100%, -50%); }
+
+.progress-bar-animated {
+    transition: width 1.5s ease-in-out;
+}

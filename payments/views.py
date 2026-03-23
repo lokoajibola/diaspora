@@ -1,8 +1,6 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render, redirect
+from django.db import models
 
 from orders.cart import Cart
 from .models import VendorPayout
@@ -24,7 +22,7 @@ def mark_as_paid(request, payout_id):
     payout.is_paid = True
     payout.payout_date = timezone.now()
     payout.save()
-    return redirect('admin_payout_dashboard')
+    return redirect('payments_admin_payout_dashboard')
 
   
 @staff_member_required

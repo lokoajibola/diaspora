@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-7 text-center">
+        <div class="card shadow-lg border-0">
+            <div class="card-body p-5">
+                <h2 class="fw-bold text-danger">Payment Not Completed</h2>
+                <p class="lead">We could not confirm your payment.</p>
+                <div class="bg-light p-3 rounded mb-4">
+                    <p class="mb-0">{{ message|default:"Please try the payment again or contact support if the charge was deducted." }}</p>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'cart_detail' %}" class="btn btn-primary btn-lg">Return to Cart</a>
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary">Continue Shopping</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,26 +1,25 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from products.models import Product
-from .cart import Cart
-from payments.utils import initialize_paystack_payment
+import hashlib
+import hmac
+import json
+import uuid
+from decimal import Decimal
+
 import requests
 from django.conf import settings
-from .models import Order, OrderItem
-from django.contrib.auth.decorators import login_required
-from payments.models import VendorPayout
-import json
-import hmac
-import hashlib
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-import uuid
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from users.models import Notification
-from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-import json
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+
+from products.models import Product
+from users.models import Notification
+
+from .cart import Cart
+from .models import Order, OrderItem
 from .utils import ensure_tracking_number, credit_vendors_for_paid_order, reduce_stock_for_paid_order
 
 @require_POST
@@ -91,20 +90,6 @@ def can_view_order(user, order):
         return True
     return False
 
-def payment_verify(request):
-    # ... after verifying payment is successful ...
-    order.status = 'paid'
-    order.save()
-
-    # Alert the vendors involved
-    for item in order.items.all():
-        vendor = item.product.vendor
-        Notification.objects.create(
-            user=vendor,
-            message=f"New Sale! {item.quantity}x {item.product.name} has been ordered.",
-            link=reverse('vendor_dashboard')
-        )
-
 @staff_member_required
 def admin_update_status(request, order_id):
     if request.method == 'POST':
@@ -149,11 +134,17 @@ def vendor_confirm_dispatch(request, order_id):
 def paystack_webhook(request):
     payload = request.body
     sig_header = request.META.get('HTTP_X_PAYSTACK_SIGNATURE')
-    
-    # Verify the request actually came from Paystack
-    hash = hmac.new(settings.PAYSTACK_SECRET_KEY.encode('utf-8'), payload, hashlib.sha512).hexdigest()
-    
-    if hash == sig_header:
+
+    if not settings.PAYSTACK_SECRET_KEY or not sig_header:
+        return HttpResponse(status=400)
+
+    signature = hmac.new(
+        settings.PAYSTACK_SECRET_KEY.encode('utf-8'),
+        payload,
+        hashlib.sha512,
+    ).hexdigest()
+
+    if hmac.compare_digest(signature, sig_header):
         data = json.loads(payload)
         if data['event'] == 'charge.success':
             ref = data['data']['reference']
@@ -171,19 +162,6 @@ def paystack_webhook(request):
                 
     return HttpResponse(status=200)
 
-from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
-from django.core.exceptions import PermissionDenied
-
-def can_view_order(user, order):
-    """Check if user can view a specific order."""
-    if user.is_staff or user.is_superuser:
-        return True
-    if hasattr(user, 'role') and user.role in ['admin', 'logistics', 'vendor']:
-        return True
-    if order.customer == user:
-        return True
-    return False
-
 @login_required
 def track_order(request, order_id):
     order = get_object_or_404(Order, id=order_id)
@@ -191,7 +169,7 @@ def track_order(request, order_id):
     if not can_view_order(request.user, order):
         raise PermissionDenied("You don't have permission to view this order")
     
-    return render(request, 'orders/track_order.html', {'order': order})
+    return render(request, 'orders/track_orders.html', {'order': order})
 
 def cart_add(request, product_id):
     cart = Cart(request)
@@ -281,6 +259,7 @@ def cart_remove(request, product_id):
     cart.remove(product)
     return redirect('cart_detail')
 
+@login_required
 def process_payment(request):
     order_id = request.session.get('order_id')
     order = get_object_or_404(Order, id=order_id)
@@ -317,8 +296,8 @@ def checkout(request):
                 messages.error(request, f"{item['product'].name} has only {item['product'].stock} item(s) left in stock.")
                 return redirect('cart_detail')
 
-        subtotal = float(cart.get_total_price())
-        total_price = subtotal + shipping_fee
+        subtotal = Decimal(str(cart.get_total_price()))
+        total_price = subtotal + Decimal(str(shipping_fee))
         
         # 3. Create Order
         order = Order.objects.create(
@@ -327,7 +306,7 @@ def checkout(request):
             receiver_phone=receiver_phone,
             delivery_address=delivery_address,
             country=selected_country,
-            shipping_fee=shipping_fee,
+            shipping_fee=Decimal(str(shipping_fee)),
             total_amount=total_price,
             status='pending'
         )
@@ -347,7 +326,7 @@ def checkout(request):
         
         request.session['order_id'] = int(order.id)
         # Store amount as string to be 100% safe for Paystack later
-        request.session['payment_amount'] = str(total_price) 
+        request.session['payment_amount'] = str(total_price)
         
         return redirect('process_payment')
 
@@ -360,16 +339,28 @@ def checkout(request):
     
 def payment_success(request):
     reference = request.GET.get('reference')
-    # Optional: You can verify the reference with Paystack API here
-    
-    # Clear the cart from session
+
+    order = None
+    order_id = request.session.get('order_id')
+    if order_id:
+        order = Order.objects.filter(id=order_id, customer=request.user).first()
+
+    if not order and reference:
+        order = Order.objects.filter(paystack_ref=reference, customer=request.user).first()
+
     if 'cart' in request.session:
         del request.session['cart']
-        
-    return render(request, 'orders/success.html', {'reference': reference})
 
+    return render(request, 'orders/success.html', {'reference': reference, 'order': order})
+
+@login_required
 def verify_paystack_payment(request):
     reference = request.GET.get('reference')
+    order_id = request.session.get('order_id')
+
+    if not reference:
+        return render(request, 'orders/failure.html', {'message': 'Missing Paystack reference.'})
+
     url = f"https://api.paystack.co/transaction/verify/{reference}"
     headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
     
@@ -377,7 +368,7 @@ def verify_paystack_payment(request):
     res_data = response.json()
 
     if res_data['status'] and res_data['data']['status'] == 'success':
-        order = Order.objects.filter(customer=request.user).latest('created_at')
+        order = get_object_or_404(Order, id=order_id, customer=request.user)
         order.paystack_ref = reference
         order.status = 'paid'
         ensure_tracking_number(order)
@@ -388,4 +379,4 @@ def verify_paystack_payment(request):
 
         return render(request, 'orders/success.html', {'order': order})
     
-    return render(request, 'orders/failure.html')
+    return render(request, 'orders/failure.html', {'message': 'Payment verification failed.'})

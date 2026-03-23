@@ -23,7 +23,6 @@ urlpatterns = [
     path('', home, name='home'),
     path('set-currency/', set_currency, name='set_currency'),
     path('login-redirect/', user_views.role_based_redirect, name='login_redirect'),
-    path('order/<int:order_id>/update-status/', user_views.admin_update_status, name='admin_update_status'),
     # Add other apps as we build them
 ]
 

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from .models import Order
+from orders.models import Order
 from django.shortcuts import get_object_or_404, redirect
 
 # Create your views here.
