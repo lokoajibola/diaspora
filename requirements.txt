@@ -1,0 +1,4 @@
+Django==5.2.7
+django-axes==8.0.0
+requests==2.32.3
+Pillow==11.1.0
