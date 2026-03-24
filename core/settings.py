@@ -32,12 +32,12 @@ DEBUG = _get_bool_env("DJANGO_DEBUG", False)
 
 ALLOWED_HOSTS = _get_list_env(
     "DJANGO_ALLOWED_HOSTS",
-    "127.0.0.1,localhost,diasporaway.pythoneverywhere.com",
+    "127.0.0.1,localhost,diasporaway.pythonanywhere.com",
 )
 
 CSRF_TRUSTED_ORIGINS = _get_list_env(
     "DJANGO_CSRF_TRUSTED_ORIGINS",
-    "https://diasporaway.pythoneverywhere.com",
+    "https://diasporaway.pythonanywhere.com",
 )
 
 
