@@ -5,63 +5,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diaspora Way</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>{% block title %}Reach Africa{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar { background-color: #004d40; }
-        .btn-primary { background-color: #004d40; border: none; }
-        .navbar-dark .navbar-nav .nav-link { color: rgba(255,255,255,.8); }
-        .navbar-dark .navbar-nav .nav-link:hover { color: #fff; }
-        .search-form { width: 40%; margin: 0 auto; }
-        @media (max-width: 768px) {
-            .search-form { width: 100%; margin: 10px 0; }
+        :root {
+            --ra-green: #004d40;
+            --ra-green-hover: #00695c;
+            --ra-accent: #1de9b6;
         }
+        body { background-color: #f5f6fa; font-family: 'Inter', sans-serif; }
+
+        /* ── Navbar ── */
+        .ra-navbar { background-color: var(--ra-green); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+        .ra-navbar .navbar-brand img { height: 36px; width: auto; }
+        .brand-title { font-size: 1.05rem; letter-spacing: .02em; color: #fff; }
+        .ra-navbar .nav-link { color: rgba(255,255,255,.82) !important; font-size: .9rem; }
+        .ra-navbar .nav-link:hover { color: #fff !important; }
+        .search-form { width: 38%; }
+        @media (max-width: 991px) { .search-form { width: 100%; margin: 8px 0; } }
+
+        /* ── Buttons ── */
+        .btn-primary { background-color: var(--ra-green); border-color: var(--ra-green); }
+        .btn-primary:hover, .btn-primary:focus { background-color: var(--ra-green-hover); border-color: var(--ra-green-hover); }
+        .btn-outline-primary { color: var(--ra-green); border-color: var(--ra-green); }
+        .btn-outline-primary:hover { background-color: var(--ra-green); border-color: var(--ra-green); color: #fff; }
+
+        /* ── Icon buttons (cart, bell) ── */
+        .icon-btn {
+            position: relative; display: inline-flex; align-items: center;
+            color: rgba(255,255,255,.85); padding: 5px 9px; border-radius: 8px;
+            text-decoration: none; transition: color .2s, background .2s;
+        }
+        .icon-btn:hover { color: #fff; background: rgba(255,255,255,.12); }
+
+        /* ── Product cards ── */
+        .product-card { border-radius: 12px !important; overflow: hidden; transition: transform .2s, box-shadow .2s; }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,77,64,.14) !important; }
+        .product-card .card-img-top { transition: transform .3s; }
+        .product-card:hover .card-img-top { transform: scale(1.04); }
+
+        /* ── General ── */
+        .card { border-radius: 12px; }
+        .main-shell { min-height: calc(100vh - 320px); }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--ra-green-hover);
+            box-shadow: 0 0 0 .2rem rgba(0,77,64,.15);
+        }
+        .table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: #6c757d; font-weight: 600; }
+
+        /* ── Footer ── */
+        .site-footer { background: #1a1a2e; color: rgba(255,255,255,.72); }
+        .site-footer h6 { color: #fff; font-size: .75rem; letter-spacing: .08em; }
+        .site-footer a { color: rgba(255,255,255,.62); text-decoration: none; transition: color .2s; font-size: .9rem; }
+        .site-footer a:hover { color: var(--ra-accent); }
+        .site-footer p, .site-footer li { font-size: .88rem; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,.1); font-size: .8rem; color: rgba(255,255,255,.42); }
     </style>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #004d40;">
+    <nav class="navbar navbar-expand-lg navbar-dark ra-navbar">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'home' %}">
-                <img src="{% static 'images/dw1.jpg' %}" alt="Diaspora Way">
-                <span class="fw-semibold brand-title">Diaspora Way</span>
+                <img src="{% static 'images/RA-small2.png' %}" alt="Reach Africa">
+                <span class="fw-semibold brand-title">Reach Africa</span>
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" 
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
                     aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
+
             <div class="collapse navbar-collapse" id="navbarMain">
                 <form class="d-flex mx-auto search-form" action="{% url 'home' %}" method="GET">
-                    <input class="form-control me-2" type="search" name="q" 
-                           placeholder="Search products, vendors, brands, or categories..." 
-                           aria-label="Search" value="{{ query|default:'' }}">
-                    {% if request.GET.category %}<input type="hidden" name="category" value="{{ request.GET.category }}">{% endif %}
-                    {% if request.GET.sort %}<input type="hidden" name="sort" value="{{ request.GET.sort }}">{% endif %}
-                    {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
-                    {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
-                    {% if request.GET.country %}<input type="hidden" name="country" value="{{ request.GET.country }}">{% endif %}
-                    <button class="btn btn-outline-light" type="submit">Search</button>
+                    <div class="input-group">
+                        <input class="form-control" type="search" name="q"
+                               placeholder="Search products, vendors, categories…"
+                               aria-label="Search" value="{{ query|default:'' }}">
+                        {% if request.GET.category %}<input type="hidden" name="category" value="{{ request.GET.category }}">{% endif %}
+                        {% if request.GET.sort %}<input type="hidden" name="sort" value="{{ request.GET.sort }}">{% endif %}
+                        {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
+                        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
+                        {% if request.GET.country %}<input type="hidden" name="country" value="{{ request.GET.country }}">{% endif %}
+                        <button class="btn btn-outline-light" type="submit"><i class="bi bi-search"></i></button>
+                    </div>
                 </form>
-                
-                <ul class="navbar-nav ms-auto align-items-center">
-                    <!-- Currency Converter Dropdown (Moved inside navbar-nav) -->
+
+                <ul class="navbar-nav ms-auto align-items-center gap-1">
                     {% if currencies %}
-                    <li class="nav-item dropdown me-2">
-                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="currencyDropdown" 
+                    <li class="nav-item dropdown">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="currencyDropdown"
                                 data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ selected_currency.code }} ({{ selected_currency.symbol }})
+                            {{ selected_currency.code }}
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="currencyDropdown">
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                             {% for currency in currencies %}
                             <li>
-                                <form method="post" action="{% url 'set_currency' %}" style="display: inline;">
+                                <form method="post" action="{% url 'set_currency' %}" style="display:inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="currency" value="{{ currency.code }}">
                                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
                                     <button type="submit" class="dropdown-item {% if selected_currency.code == currency.code %}active{% endif %}">
-                                        {{ currency.code }} - {{ currency.name }} ({{ currency.symbol }})
+                                        {{ currency.code }} – {{ currency.name }} ({{ currency.symbol }})
                                     </button>
                                 </form>
                             </li>
@@ -69,63 +117,60 @@
                         </ul>
                     </li>
                     {% endif %}
-                    
-                    <!-- User Menu -->
+
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" 
-                               data-bs-toggle="dropdown" aria-expanded="false">
-                                Hi, {{ user.first_name|default:user.phone_number }}
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" id="userMenu"
+                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle fs-5"></i>
+                                <span class="d-none d-lg-inline">{{ user.first_name|default:user.phone_number }}</span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><h6 class="dropdown-header">Role: {{ user.get_role_display }}</h6></li>
-                                
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                <li><h6 class="dropdown-header">{{ user.get_role_display }}</h6></li>
                                 {% if user.role == 'vendor' %}
-                                    <li><a class="dropdown-item" href="{% url 'vendor_dashboard' %}">Vendor Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'vendor_dashboard' %}"><i class="bi bi-shop me-2 text-muted"></i>Vendor Dashboard</a></li>
                                 {% elif user.role == 'logistics' %}
-                                    <li><a class="dropdown-item" href="{% url 'logistics_dashboard' %}">Logistics Hub</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'logistics_dashboard' %}"><i class="bi bi-truck me-2 text-muted"></i>Logistics Hub</a></li>
                                 {% endif %}
-                                
-                                <li><a class="dropdown-item" href="{% url 'order_history' %}">My Orders</a></li>
-                                <li><a class="dropdown-item" href="{% url 'edit_profile' %}">Edit Profile</a></li>
-                                
+                                <li><a class="dropdown-item" href="{% url 'order_history' %}"><i class="bi bi-bag me-2 text-muted"></i>My Orders</a></li>
+                                <li><a class="dropdown-item" href="{% url 'edit_profile' %}"><i class="bi bi-pencil me-2 text-muted"></i>Edit Profile</a></li>
                                 {% if user.is_staff or user.is_superuser %}
-                                <li><a class="dropdown-item" href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
-                                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin Panel</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'admin_dashboard' %}"><i class="bi bi-speedometer2 me-2 text-muted"></i>Admin Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-gear me-2 text-muted"></i>Admin Panel</a></li>
                                 {% endif %}
-                                
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form action="{% url 'logout' %}" method="post" class="d-inline">
                                         {% csrf_token %}
-                                        <button type="submit" class="dropdown-item text-danger">Logout</button>
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                        </button>
                                     </form>
                                 </li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                        <li class="nav-item"><a class="btn btn-primary ms-2" href="{% url 'register' %}">Sign Up</a></li>
+                        <li class="nav-item"><a class="btn btn-light btn-sm ms-1 fw-semibold" href="{% url 'register' %}">Sign Up</a></li>
                     {% endif %}
-                    
-                    <li class="nav-item ms-2">
-                        <a href="{% url 'cart_detail' %}" class="icon-btn" title="Cart" aria-label="Cart">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cart" viewBox="0 0 16 16">
-                                <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                            </svg>
+
+                    <li class="nav-item">
+                        <a href="{% url 'cart_detail' %}" class="icon-btn ms-1" title="Cart" aria-label="Cart">
+                            <i class="bi bi-bag fs-5"></i>
                             {% if cart_count %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.65rem;">
                                 {{ cart_count }}
                             </span>
                             {% endif %}
                         </a>
                     </li>
                     {% if user.is_authenticated and user.role == 'vendor' %}
-                    <li class="nav-item ms-2">
+                    <li class="nav-item">
                         <a class="icon-btn" href="{% url 'vendor_notifications' %}" title="Notifications" aria-label="Notifications">
-                            🔔
+                            <i class="bi bi-bell fs-5"></i>
                             {% if unread_notifications_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.65rem;">
                                 {{ unread_notifications_count }}
                             </span>
                             {% endif %}
@@ -156,7 +201,10 @@
         <div class="container py-5">
             <div class="row g-4">
                 <div class="col-lg-5">
-                    <h6 class="text-uppercase fw-bold mb-3">Diaspora Way</h6>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <img src="{% static 'images/RA-small2.png' %}" alt="Reach Africa" style="height:28px;">
+                        <h6 class="text-uppercase fw-bold mb-0">Reach Africa</h6>
+                    </div>
                     <p class="mb-0">
                         A trusted global marketplace connecting international buyers with verified African vendors.
                     </p>
@@ -170,29 +218,27 @@
                     </ul>
                 </div>
                 <div class="col-lg-4 col-md-6">
-                    <h6 class="text-uppercase fw-bold mb-3">Customer Support</h6>
+                    <h6 class="text-uppercase fw-bold mb-3">Why Reach Africa</h6>
                     <ul class="list-unstyled mb-0">
-                        <li class="mb-2">Secure checkout with Paystack</li>
-                        <li class="mb-2">Order tracking from purchase to delivery</li>
-                        <li>Vendor KYC and payout verification workflow</li>
+                        <li class="mb-2"><i class="bi bi-shield-check me-2" style="color:var(--ra-accent);"></i>Secure checkout with Paystack</li>
+                        <li class="mb-2"><i class="bi bi-geo-alt me-2" style="color:var(--ra-accent);"></i>Order tracking from purchase to delivery</li>
+                        <li><i class="bi bi-patch-check me-2" style="color:var(--ra-accent);"></i>Vendor KYC and payout verification</li>
                     </ul>
                 </div>
             </div>
         </div>
         <div class="text-center py-3 footer-bottom">
-            © {% now "Y" %} Diaspora Way. All rights reserved.
+            © {% now "Y" %} Reach Africa. All rights reserved.
         </div>
     </footer>
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(function () {
+                document.querySelectorAll('.alert').forEach(function (el) {
+                    bootstrap.Alert.getOrCreateInstance(el).close();
                 });
             }, 5000);
         });

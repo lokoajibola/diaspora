@@ -2,76 +2,85 @@
 {% load static %}
 {% load currency_tags %}
 
+{% block title %}Your Cart – Reach Africa{% endblock %}
 {% block content %}
-<div class="card shadow-sm">
-    <div class="card-header bg-white">
-        <h4 class="mb-0">Your Shopping Cart</h4>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Your Cart</h3>
+        <p class="text-muted mb-0">{% if cart %}{{ cart|length }} item{{ cart|length|pluralize }} ready for checkout{% else %}Your cart is empty{% endif %}</p>
     </div>
-    <div class="card-body">
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Continue Shopping</a>
+</div>
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
         {% if cart %}
             <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead>
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
                         <tr>
-                            <th>Product</th>
+                            <th class="ps-4">Product</th>
                             <th>Price</th>
                             <th>Quantity</th>
                             <th>Total</th>
-                            <th>Action</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in cart %}
                         <tr id="cart-row-{{ item.product.id }}" data-product-id="{{ item.product.id }}">
-                            <td>{{ item.product.name }}</td>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="{{ item.product.image.url }}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;" alt="{{ item.product.name }}">
+                                    <span class="fw-medium">{{ item.product.name }}</span>
+                                </div>
+                            </td>
                             <td class="item-price">{{ CURRENCY_SYMBOL }}<span class="price-value" data-price="{{ item.price|multiply:CURRENCY_RATE }}">{{ item.price|multiply:CURRENCY_RATE|floatformat:2 }}</span></td>
                             <td>
                                 <form method="post" action="{% url 'cart_update' %}" class="d-inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="product_id" value="{{ item.product.id }}">
-                                    <div class="input-group input-group-sm" style="width: 100px;">
+                                    <div class="input-group input-group-sm" style="width:110px;">
                                         <select name="quantity" class="form-select form-select-sm" onchange="this.form.submit()">
                                             {% for i in item.product.stock|to_range %}
                                                 <option value="{{ i }}" {% if item.quantity == i %}selected{% endif %}>{{ i }}</option>
                                             {% endfor %}
                                         </select>
-                                        <button type="submit" class="btn btn-outline-secondary">Update</button>
+                                        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-arrow-repeat"></i></button>
                                     </div>
                                     <small class="text-muted d-block mt-1">Max: {{ item.product.stock }}</small>
                                 </form>
                             </td>
-                            <td class="item-total">{{ CURRENCY_SYMBOL }}<span id="total-{{ item.product.id }}">
-                                {{ item.total_price|multiply:CURRENCY_RATE|floatformat:2 }}
-                            </span></td>
+                            <td class="item-total fw-semibold">{{ CURRENCY_SYMBOL }}<span id="total-{{ item.product.id }}">{{ item.total_price|multiply:CURRENCY_RATE|floatformat:2 }}</span></td>
                             <td>
-                                <a href="{% url 'cart_remove' item.product.id %}" class="btn btn-sm btn-danger">Remove</a>
+                                <a href="{% url 'cart_remove' item.product.id %}" class="btn btn-sm btn-outline-danger" title="Remove" aria-label="Remove item">
+                                    <i class="bi bi-trash3"></i>
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
-                    <tfoot>
-                        <tr class="border-top">
-                            <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
-                            <td colspan="2" class="text-start">
-                                <strong id="grand-total">
-                                    {{ CURRENCY_SYMBOL }}{{ cart.get_total_price|multiply:CURRENCY_RATE|floatformat:2 }}
-                                </strong>
-                            </td>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="3" class="text-end ps-4 py-3"><strong>Grand Total</strong></td>
+                            <td class="py-3"><strong class="text-success fs-5" id="grand-total">{{ CURRENCY_SYMBOL }}{{ cart.get_total_price|multiply:CURRENCY_RATE|floatformat:2 }}</strong></td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
-            <div class="text-end mt-4">
+            <div class="d-flex justify-content-end p-4 border-top">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'checkout' %}" class="btn btn-primary btn-lg">Proceed to Checkout</a>
+                    <a href="{% url 'checkout' %}" class="btn btn-primary btn-lg px-5"><i class="bi bi-credit-card me-2"></i>Proceed to Checkout</a>
                 {% else %}
-                    <a href="{% url 'login' %}?next={% url 'checkout' %}" class="btn btn-warning btn-lg">Log in to Checkout</a>
+                    <a href="{% url 'login' %}?next={% url 'checkout' %}" class="btn btn-warning btn-lg px-5"><i class="bi bi-box-arrow-in-right me-2"></i>Log in to Checkout</a>
                 {% endif %}
             </div>
         {% else %}
-            <p class="text-center">Your cart is empty.</p>
-            <div class="text-center">
-                <a href="{% url 'product_list' %}" class="btn btn-primary">Continue Shopping</a>
+            <div class="text-center py-5">
+                <i class="bi bi-bag" style="font-size:3.5rem;color:#dee2e6;"></i>
+                <h5 class="mt-3 text-muted">Your cart is empty</h5>
+                <p class="text-muted">Looks like you haven’t added anything yet.</p>
+                <a href="{% url 'home' %}" class="btn btn-primary mt-2">Start Shopping</a>
             </div>
         {% endif %}
     </div>

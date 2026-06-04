@@ -1,26 +1,38 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block title %}Sign In – Reach Africa{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h3 class="text-center mb-4">Login</h3>
+<div class="row justify-content-center mt-4">
+    <div class="col-md-5 col-lg-4">
+        <div class="text-center mb-4">
+            <img src="{% static 'images/RA-small2.png' %}" alt="Reach Africa" style="height:52px;">
+            <h4 class="mt-2 fw-bold">Welcome back</h4>
+            <p class="text-muted">Sign in to your Reach Africa account</p>
+        </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label class="form-label">Phone Number</label>
-                        <input type="text" name="username" class="form-control" placeholder="e.g. +234..." required>
+                        <label class="form-label fw-medium">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                            <input type="text" name="username" class="form-control" placeholder="e.g. +234…" required autofocus>
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" required>
+                        <label class="form-label fw-medium">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
                     </div>
                     {% if form.errors %}
-                        <div class="alert alert-danger">Invalid credentials or locked account.</div>
+                        <div class="alert alert-danger py-2"><i class="bi bi-exclamation-triangle me-2"></i>Invalid credentials or account locked.</div>
                     {% endif %}
-                    <button type="submit" class="btn btn-primary w-100">Sign In</button>
+                    <button type="submit" class="btn btn-primary w-100 mt-1">Sign In</button>
                 </form>
-                <p class="mt-3 text-center">New here? <a href="{% url 'register' %}">Register</a></p>
+                <p class="mt-3 text-center mb-0">Don't have an account? <a href="{% url 'register' %}" class="fw-medium">Sign up free</a></p>
             </div>
         </div>
     </div>

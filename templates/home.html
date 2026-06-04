@@ -17,33 +17,45 @@
     <div class="row g-3 text-center">
         <div class="col-6 col-lg-3">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-body py-3">
-                    <h6 class="mb-1">Same Week Dispatch</h6>
-                    <small class="text-muted">Priority packing from vetted vendors</small>
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                    <i class="bi bi-lightning-charge-fill fs-4 text-warning flex-shrink-0"></i>
+                    <div>
+                        <h6 class="mb-1">Same Week Dispatch</h6>
+                        <small class="text-muted">Priority packing from vetted vendors</small>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-body py-3">
-                    <h6 class="mb-1">Secure Checkout</h6>
-                    <small class="text-muted">Pay in {{ CURRENCY_CODE }} with transparent pricing</small>
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                    <i class="bi bi-lock-fill fs-4 text-success flex-shrink-0"></i>
+                    <div>
+                        <h6 class="mb-1">Secure Checkout</h6>
+                        <small class="text-muted">Pay in {{ CURRENCY_CODE }} with transparent pricing</small>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-body py-3">
-                    <h6 class="mb-1">Live Tracking</h6>
-                    <small class="text-muted">Monitor each stage of your delivery</small>
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                    <i class="bi bi-geo-alt-fill fs-4 text-primary flex-shrink-0"></i>
+                    <div>
+                        <h6 class="mb-1">Live Tracking</h6>
+                        <small class="text-muted">Monitor each stage of your delivery</small>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="card border-0 shadow-sm h-100">
-                <div class="card-body py-3">
-                    <h6 class="mb-1">Multi-Country Listings</h6>
-                    <small class="text-muted">Nigeria and Ghana product options</small>
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                    <i class="bi bi-globe2 fs-4 text-info flex-shrink-0"></i>
+                    <div>
+                        <h6 class="mb-1">Multi-Country</h6>
+                        <small class="text-muted">Nigeria and Ghana product options</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -134,29 +146,30 @@
             </div>
             {% endif %}
 
-            <h3 class="mb-4">Latest from West Africa</h3>
+            <h3 class="mb-4">Browse Products</h3>
             <div class="row g-3">
                 {% for product in products %}
                 <div class="col-6 col-md-4 col-xl-3">
                     <div class="card h-100 border-0 shadow-sm product-card">
-                        <a href="{% url 'product_detail' product.id %}"><img src="{{ product.image.url }}" class="card-img-top" style="height: 180px; object-fit: cover;"></a>
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-1">Category: {{ product.category.name }}</small>
-                            <small class="text-muted d-block mb-1">Country: {{ product.get_country_display }}</small>
-                            <small class="text-muted">Sold by:
-                                <a href="{% url 'vendor_store' product.vendor.id %}">{{ product.vendor.first_name }}</a>
-                            </small>
-                            <h6 class="text-truncate mt-1">{{ product.name }}</h6>
-                            {% if product.discount_percentage > 0 %}
-                            <p class="mb-1 text-muted small"><s>{{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}</s></p>
-                            {% endif %}
-                            <p class="text-success fw-bold mb-2">
-                                {{ CURRENCY_SYMBOL }}{{ product.discounted_price|multiply:CURRENCY_RATE|floatformat:2 }}
-                            </p>
-                            <form action="{% url 'cart_add' product.id %}" method="post">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-primary w-100">Add to Cart</button>
-                            </form>
+                        <a href="{% url 'product_detail' product.id %}" class="d-block overflow-hidden" style="border-radius:12px 12px 0 0;">
+                            <img src="{{ product.image.url }}" class="card-img-top" style="height: 175px; object-fit: cover;">
+                        </a>
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="text-truncate mb-1"><a href="{% url 'product_detail' product.id %}" class="text-dark text-decoration-none">{{ product.name }}</a></h6>
+                            <div class="mt-auto">
+                                {% if product.discount_percentage > 0 %}
+                                <p class="mb-0 text-muted small"><s>{{ CURRENCY_SYMBOL }}{{ product.selling_price|multiply:CURRENCY_RATE|floatformat:2 }}</s> <span class="badge bg-danger ms-1">{{ product.discount_percentage|floatformat:0 }}% off</span></p>
+                                {% endif %}
+                                <p class="text-success fw-bold mb-2">{{ CURRENCY_SYMBOL }}{{ product.discounted_price|multiply:CURRENCY_RATE|floatformat:2 }}</p>
+                                <p class="text-muted mb-2" style="font-size:.75rem;">
+                                    <i class="bi bi-shop me-1"></i><a href="{% url 'vendor_store' product.vendor.id %}" class="text-muted text-decoration-none">{{ product.vendor.first_name }}</a>
+                                    &nbsp;·&nbsp;<i class="bi bi-flag me-1"></i>{{ product.get_country_display }}
+                                </p>
+                                <form action="{% url 'cart_add' product.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-primary w-100"><i class="bi bi-bag-plus me-1"></i>Add to Cart</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>

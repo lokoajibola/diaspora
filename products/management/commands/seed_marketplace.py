@@ -259,7 +259,7 @@ class Command(BaseCommand):
 <rect x="48" y="48" width="704" height="220" rx="36" fill="{primary}" opacity="0.95"/>
 <circle cx="650" cy="620" r="110" fill="{primary}" opacity="0.12"/>
 <circle cx="180" cy="660" r="72" fill="{primary}" opacity="0.10"/>
-<text x="80" y="140" fill="#ffffff" font-size="34" font-family="Arial, Helvetica, sans-serif">Diaspora Way</text>
+<text x="80" y="140" fill="#ffffff" font-size="34" font-family="Arial, Helvetica, sans-serif">Reach Africa</text>
 <text x="80" y="205" fill="#ffffff" font-size="54" font-weight="700" font-family="Arial, Helvetica, sans-serif">{title}</text>
 <text x="80" y="370" fill="{text_color}" font-size="30" font-family="Arial, Helvetica, sans-serif">Category</text>
 <text x="80" y="418" fill="{text_color}" font-size="44" font-weight="700" font-family="Arial, Helvetica, sans-serif">{category}</text>

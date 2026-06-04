@@ -1,38 +1,40 @@
 {% extends 'base.html' %}
+{% block title %}Track Order #{{ order.id }} – Reach Africa{% endblock %}
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow">
-        <div class="card-header bg-dark text-white d-flex justify-content-between">
-            <h5 class="mb-0">Order Tracking #{{ order.id }}</h5>
-            <span>Status: <strong>{{ order.get_status_display }}</strong></span>
-        </div>
-        <div class="card-body">
-            <div class="row text-center mb-5">
-                <div class="col {% if order.status != 'pending' %}text-success{% else %}text-muted{% endif %}">
-                    <i class="bi bi-check-circle-fill fs-2"></i><br>Confirmed
-                </div>
-                <div class="col {% if order.status == 'shipped' or order.status == 'delivered' %}text-success{% else %}text-muted{% endif %}">
-                    <i class="bi bi-truck fs-2"></i><br>Dispatched
-                </div>
-                <div class="col {% if order.status == 'delivered' %}text-success{% else %}text-muted{% endif %}">
-                    <i class="bi bi-house-heart-fill fs-2"></i><br>Delivered
-                </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Track Order #{{ order.id }}</h3>
+        <p class="text-muted mb-0">Real-time delivery status</p>
+    </div>
+    <a href="{% url 'order_history' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>My Orders</a>
+</div>
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <div class="row text-center mb-4">
+            <div class="col {% if order.status != 'pending' %}text-success{% else %}text-muted{% endif %}">
+                <i class="bi bi-check-circle-fill fs-2"></i>
+                <div class="small fw-medium mt-1">Confirmed</div>
             </div>
+            <div class="col {% if order.status == 'shipped' or order.status == 'delivered' %}text-success{% else %}text-muted{% endif %}">
+                <i class="bi bi-truck fs-2"></i>
+                <div class="small fw-medium mt-1">Dispatched</div>
+            </div>
+            <div class="col {% if order.status == 'delivered' %}text-success{% else %}text-muted{% endif %}">
+                <i class="bi bi-house-heart-fill fs-2"></i>
+                <div class="small fw-medium mt-1">Delivered</div>
+            </div>
+        </div>
 
-            <div class="row border-top pt-4">
-                <div class="col-md-6">
-                    <h6>Shipping Address</h6>
-                    <p>{{ order.receiver_name }}<br>{{ order.delivery_address }}<br>{{ order.receiver_phone }}</p>
-                </div>
-                <div class="col-md-6">
-                    <h6>Tracking Details</h6>
-                    <p>Method: Standard DiasporaWay Delivery<br>
-                    Tracking Number: <span class="badge bg-info text-dark">{{ order.tracking_number|default:"Assigning soon..." }}</span></p>
-                </div>
+        <div class="row border-top pt-4">
+            <div class="col-md-6">
+                <h6 class="fw-semibold"><i class="bi bi-geo-alt me-2 text-muted"></i>Shipping Address</h6>
+                <p class="text-muted">{{ order.receiver_name }}<br>{{ order.delivery_address }}<br>{{ order.receiver_phone }}</p>
             </div>
-        </div>
-        <div class="card-footer bg-light">
-            <a href="{% url 'order_history' %}" class="btn btn-outline-secondary">Back to My Orders</a>
+            <div class="col-md-6">
+                <h6 class="fw-semibold"><i class="bi bi-box-seam me-2 text-muted"></i>Tracking Details</h6>
+                <p class="text-muted">Method: Standard Reach Africa Delivery<br>
+                Tracking Number: <span class="badge bg-info text-dark">{{ order.tracking_number|default:"Assigning soon…" }}</span></p>
+            </div>
         </div>
     </div>
 </div>
