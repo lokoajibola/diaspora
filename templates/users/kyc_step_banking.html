@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Banking & Compliance – KYC Step 5{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'vendor_kyc_dashboard' %}">KYC Dashboard</a></li>
+                    <li class="breadcrumb-item active">Step 5: Banking & Compliance</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-4">
+                    <h4 class="fw-bold mb-1">Banking Details</h4>
+                    <p class="text-muted mb-0">Step 5 of 5 — Set up your payout information</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Note:</strong> Your bank details will be used for payouts. Ensure the account name matches your BVN.
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-medium">Bank Name *</label>
+                                <input type="text" name="bank_name" class="form-control" value="{{ user.bank_name|default:'' }}" required placeholder="e.g. GTBank">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-medium">Account Name *</label>
+                                <input type="text" name="bank_account_name" class="form-control" value="{{ user.bank_account_name|default:'' }}" required placeholder="Name on bank account">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-medium">Account Number *</label>
+                                <input type="text" name="bank_account_number" class="form-control" value="{{ user.bank_account_number|default:'' }}" required maxlength="10" pattern="[0-9]{10}" placeholder="10-digit account number">
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold mb-3">Guarantor Information</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Guarantor Full Name</label>
+                                <input type="text" name="guarantor_name" class="form-control" placeholder="Full name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Guarantor Phone</label>
+                                <input type="text" name="guarantor_phone" class="form-control" placeholder="e.g. +2348012345678">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Guarantor Address</label>
+                                <textarea name="guarantor_address" class="form-control" rows="2" placeholder="Residential address"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Guarantor Occupation</label>
+                                <input type="text" name="guarantor_occupation" class="form-control" placeholder="e.g. Business Owner">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Relationship to Guarantor</label>
+                                <input type="text" name="guarantor_relationship" class="form-control" placeholder="e.g. Family, Friend, Business Partner">
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold mb-3">Product Compliance</h6>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Required for:</strong> Food products, cosmetics, medicines, and regulated items.
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">NAFDAC Registration Number</label>
+                                <input type="text" name="nafdac_number" class="form-control" placeholder="e.g. 01-2345">
+                                <small class="text-muted">Required for food, cosmetics, and medicine products</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">NAFDAC Certificate</label>
+                                <input type="file" name="nafdac_document" class="form-control" accept="image/*,.pdf">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">SON Registration Number</label>
+                                <input type="text" name="son_number" class="form-control" placeholder="SON number if applicable">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">SON Certificate</label>
+                                <input type="file" name="son_document" class="form-control" accept="image/*,.pdf">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input type="checkbox" name="has_labels" class="form-check-input" id="hasLabels">
+                                    <label class="form-check-label" for="hasLabels">Products have compliant labels</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input type="checkbox" name="batch_tracking" class="form-check-input" id="batchTracking">
+                                    <label class="form-check-label" for="batchTracking">Batch number tracking in place</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Ingredients List (if applicable)</label>
+                            <textarea name="ingredients_list" class="form-control" rows="2" placeholder="List of ingredients for food/cosmetic products"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">Expiry Date Management Policy</label>
+                            <textarea name="expiry_date_policy" class="form-control" rows="2" placeholder="How do you manage product expiry dates?"></textarea>
+                        </div>
+
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Almost done!</strong> After submitting, our team will review your information. You'll be notified once the review is complete.
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'vendor_kyc_step' 'address' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Previous
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-send me-2"></i>Submit KYC for Review
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

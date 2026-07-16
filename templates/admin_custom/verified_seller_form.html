@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Verified Seller – {{ vendor.phone_number }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Assign Verified Seller Badge</h3>
+            <p class="text-muted mb-0">{{ vendor.shop_name|default:vendor.phone_number }} · {{ vendor.first_name }} {{ vendor.last_name }}</p>
+        </div>
+        <a href="{% url 'admin_kyc_review_detail' vendor.id %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Review
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-patch-check-fill me-2 text-success"></i>Verified Seller Badge</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-success">
+                        <i class="bi bi-trophy me-2"></i>
+                        <strong>Almost there!</strong> This vendor has passed all previous stages. Assign a verification level to make them an official Verified Seller on Reach Africa.
+                    </div>
+
+                    <form method="POST" action="{% url 'admin_verified_seller' vendor.id %}">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">Verification Level</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input type="radio" name="verification_level" value="bronze" class="form-check-input" id="bronze"
+                                           {% if verified_seller.verification_level == 'bronze' or not verified_seller %}checked{% endif %}>
+                                    <label class="form-check-label" for="bronze">
+                                        <span class="badge bg-secondary fs-6">Bronze</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="radio" name="verification_level" value="silver" class="form-check-input" id="silver"
+                                           {% if verified_seller.verification_level == 'silver' %}checked{% endif %}>
+                                    <label class="form-check-label" for="silver">
+                                        <span class="badge bg-secondary fs-6" style="background-color: #C0C0C0 !important; color: #000;">Silver</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="radio" name="verification_level" value="gold" class="form-check-input" id="gold"
+                                           {% if verified_seller.verification_level == 'gold' %}checked{% endif %}>
+                                    <label class="form-check-label" for="gold">
+                                        <span class="badge bg-warning fs-6 text-dark">Gold</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="radio" name="verification_level" value="platinum" class="form-check-input" id="platinum"
+                                           {% if verified_seller.verification_level == 'platinum' %}checked{% endif %}>
+                                    <label class="form-check-label" for="platinum">
+                                        <span class="badge bg-info fs-6">Platinum</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold mb-3">Verification Checklist</h6>
+                        <div class="mb-4">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="inspection_done" class="form-check-input" id="inspection"
+                                       {% if verified_seller.inspection_done %}checked{% endif %}>
+                                <label class="form-check-label" for="inspection">Physical inspection of business premises completed</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="video_interview_done" class="form-check-input" id="videoInterview"
+                                       {% if verified_seller.video_interview_done %}checked{% endif %}>
+                                <label class="form-check-label" for="videoInterview">Video interview with vendor completed</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="supplier_references_ok" class="form-check-input" id="supplierRefs"
+                                       {% if verified_seller.supplier_references_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="supplierRefs">Supplier references verified</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="quality_audit_ok" class="form-check-input" id="qualityAudit"
+                                       {% if verified_seller.quality_audit_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="qualityAudit">Full quality audit passed</label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input type="checkbox" name="badge_displayed" class="form-check-input" id="badgeDisplay"
+                                       {% if verified_seller.badge_displayed %}checked{% endif %}>
+                                <label class="form-check-label" for="badgeDisplay">Verified badge will be displayed on all products</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin_kyc_review_detail' vendor.id %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-patch-check-fill me-2"></i>Activate Verified Seller
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <!-- Badge Preview -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-eye me-2"></i>Badge Preview</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="py-4">
+                        <i class="bi bi-patch-check-fill" style="font-size: 4rem; color: var(--bs-success);"></i>
+                        <h4 class="mt-2">Verified Seller</h4>
+                        <p class="text-muted mb-0">This badge will appear on all products listed by</p>
+                        <strong>{{ vendor.shop_name|default:vendor.phone_number }}</strong>
+                        <hr>
+                        <p class="small text-muted mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Badge is valid for <strong>1 year</strong> from the date of issue.
+                            Vendor will receive a notification when the badge is assigned.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Status -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-list-check me-2"></i>Completed Stages</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>Business Information
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>Identity Verification
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>Contact & Address
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>Banking & Compliance
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi {% if vendor.kyc_stage == 'quality_assurance' or vendor.kyc_stage == 'verified_seller' or vendor.kyc_stage == 'approved' %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %} me-2"></i>
+                            Internal Checks
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi {% if vendor.kyc_stage == 'verified_seller' or vendor.kyc_stage == 'approved' %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %} me-2"></i>
+                            Quality Assurance
+                        </li>
+                        <li>
+                            <i class="bi {% if vendor.kyc_stage == 'approved' %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %} me-2"></i>
+                            <strong>☆ Verified Seller Badge</strong>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

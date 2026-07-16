@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}KYC Review – Admin{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">KYC Review Panel</h3>
+            <p class="text-muted mb-0">Review vendor KYC applications</p>
+        </div>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Admin Dashboard
+        </a>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link {% if current_filter == 'pending' %}active fw-bold{% endif %}" 
+               href="?status=pending">
+               Pending Review <span class="badge bg-warning ms-1">{{ pending_count }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if current_filter == 'approved' %}active fw-bold{% endif %}" href="?status=approved">Approved</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if current_filter == 'rejected' %}active fw-bold{% endif %}" href="?status=rejected">Rejected</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if current_filter == 'all' %}active fw-bold{% endif %}" href="?status=all">All Vendors</a>
+        </li>
+    </ul>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Vendor</th>
+                        <th>Shop Name</th>
+                        <th>KYC Stage</th>
+                        <th>NIN</th>
+                        <th>BVN</th>
+                        <th>Bank Details</th>
+                        <th>Submitted</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for vendor in vendors %}
+                    <tr>
+                        <td>
+                            <strong>{{ vendor.phone_number }}</strong>
+                            <br><small class="text-muted">{{ vendor.first_name }} {{ vendor.last_name }}</small>
+                        </td>
+                        <td>{{ vendor.shop_name|default:'-' }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if vendor.kyc_stage == 'approved' %}bg-success
+                                {% elif vendor.kyc_stage == 'rejected' %}bg-danger
+                                {% elif vendor.kyc_stage == 'internal_check' %}bg-warning text-dark
+                                {% elif vendor.kyc_stage == 'quality_assurance' %}bg-info
+                                {% elif vendor.kyc_stage == 'verified_seller' %}bg-primary
+                                {% else %}bg-secondary{% endif %}">
+                                {{ vendor.get_kyc_stage_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if vendor.nin %}
+                                <span class="text-muted small">{{ vendor.nin|slice:":3" }}*****</span>
+                            {% else %}
+                                <span class="text-danger small">Missing</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if vendor.bvn %}
+                                <span class="text-muted small">{{ vendor.bvn|slice:":2" }}******</span>
+                            {% else %}
+                                <span class="text-danger small">Missing</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if vendor.bank_name and vendor.bank_account_number %}
+                                <small>{{ vendor.bank_name }}<br>{{ vendor.bank_account_number }}</small>
+                            {% else %}
+                                <span class="text-danger small">Incomplete</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if vendor.kyc_submitted_at %}
+                                <small>{{ vendor.kyc_submitted_at|date:"M d, Y" }}</small>
+                            {% else %}
+                                <small class="text-muted">Not submitted</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin_kyc_review_detail' vendor.id %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-eye"></i> Review
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            {% if current_filter == 'pending' %}
+                                No pending KYC applications. Great job!
+                            {% else %}
+                                No vendors found in this category.
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

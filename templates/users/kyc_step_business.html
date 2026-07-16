@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Business Information – KYC Step 1{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'vendor_kyc_dashboard' %}">KYC Dashboard</a></li>
+                    <li class="breadcrumb-item active">Step 1: Business Information</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-4">
+                    <h4 class="fw-bold mb-1">Business Information</h4>
+                    <p class="text-muted mb-0">Step 1 of 5 — Tell us about your business</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Business / Shop Name *</label>
+                            <input type="text" name="shop_name" class="form-control" value="{{ user.shop_name|default:'' }}" required placeholder="e.g. Ade's Fashion Store">
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Business Registration (CAC) Number</label>
+                                <input type="text" name="business_registration_number" class="form-control" 
+                                       value="{{ user.business_registration_number|default:'' }}" placeholder="e.g. RC1234567">
+                                <small class="text-muted">CAC registration number for registered businesses</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Business Type</label>
+                                <select name="business_type" class="form-select">
+                                    <option value="">Select business type...</option>
+                                    <option value="sole_proprietorship" {% if user.business_type == 'sole_proprietorship' %}selected{% endif %}>Sole Proprietorship</option>
+                                    <option value="llc" {% if user.business_type == 'llc' %}selected{% endif %}>Limited Liability Company (LLC)</option>
+                                    <option value="partnership" {% if user.business_type == 'partnership' %}selected{% endif %}>Partnership</option>
+                                    <option value="corporation" {% if user.business_type == 'corporation' %}selected{% endif %}>Corporation</option>
+                                    <option value="nonprofit" {% if user.business_type == 'nonprofit' %}selected{% endif %}>Non-Profit Organization</option>
+                                    <option value="other" {% if user.business_type == 'other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Date Business Started</label>
+                                <input type="date" name="business_start_date" class="form-control" 
+                                       value="{{ user.business_start_date|date:'Y-m-d'|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Tax Identification Number (TIN)</label>
+                                <input type="text" name="tin" class="form-control" value="{{ user.tin|default:'' }}" placeholder="e.g. 12345678-0001">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Business Description</label>
+                            <textarea name="business_description" class="form-control" rows="3" 
+                                      placeholder="Describe what your business does, products you sell, etc.">{{ user.business_description|default:'' }}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">Business Logo</label>
+                            <input type="file" name="business_logo" class="form-control" accept="image/*">
+                            {% if user.business_logo %}
+                                <small class="text-muted">Currently: <a href="{{ user.business_logo.url }}" target="_blank">View logo</a></small>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'vendor_kyc_dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
+                            <button type="submit" class="btn btn-primary">
+                                Save & Continue <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

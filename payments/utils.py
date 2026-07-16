@@ -5,7 +5,7 @@ def initialize_paystack_payment(email, amount, callback_url):
     url = "https://api.paystack.co/transaction/initialize"
     headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
     data = {
-        "email": email,
+        "email": 'jbrizy@gmail.com',
         "amount": int(amount * 100), # Paystack works in kobo/cents
         "callback_url": callback_url
     }

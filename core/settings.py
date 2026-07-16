@@ -8,8 +8,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import environ
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env(
+    DJANGO_DEBUG=(bool, True),
+)
+environ.Env.read_env(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -217,9 +224,26 @@ EXCHANGE_RATES = {
     'EUR': 0.00061,
 }
 
-# Security Keys (Keep secret in production)
-PAYSTACK_PUBLIC_KEY = os.getenv('PAYSTACK_PUBLIC_KEY', '')
-PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY', '')
+PAYSTACK_PUBLIC_KEY = env('PAYSTACK_PUBLIC_KEY', default='')
+PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY', default='')
+PAYSTACK_WEBHOOK_SECRET = env('PAYSTACK_WEBHOOK_SECRET', default=PAYSTACK_SECRET_KEY)
+PAYSTACK_BASE_URL = env('PAYSTACK_BASE_URL', default='https://api.paystack.co')
+PAYSTACK_CALLBACK_URL = env('PAYSTACK_CALLBACK_URL', default='')
+
+# Email Configuration (for OTP and notifications)
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@reachafrica.com')
+
+# Twilio Configuration (for SMS and WhatsApp OTP)
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER', '')
+TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER', '')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

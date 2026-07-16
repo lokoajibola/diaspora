@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}QA Review – {{ vendor.phone_number }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Quality Assurance Review</h3>
+            <p class="text-muted mb-0">{{ vendor.shop_name|default:vendor.phone_number }} · {{ vendor.first_name }} {{ vendor.last_name }}</p>
+        </div>
+        <a href="{% url 'admin_kyc_review_detail' vendor.id %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Review
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-check2-square me-2"></i>QA Checklist</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{% url 'admin_qa_review' vendor.id %}">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Shop & Warehouse</h6>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="shop_photos_ok" class="form-check-input" id="shopPhotos" 
+                                       {% if qa.shop_photos_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="shopPhotos">Shop/Warehouse photos look legitimate and match the stated business address</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="packaging_photos_ok" class="form-check-input" id="packagingPhotos"
+                                       {% if qa.packaging_photos_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="packagingPhotos">Product packaging photos show proper labeling and quality</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="inventory_photos_ok" class="form-check-input" id="inventoryPhotos"
+                                       {% if qa.inventory_photos_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="inventoryPhotos">Inventory photos indicate sufficient stock levels</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold">Documentation</h6>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="supplier_invoices_ok" class="form-check-input" id="supplierInvoices"
+                                       {% if qa.supplier_invoices_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="supplierInvoices">Supplier invoices are authentic and match product range</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="authenticity_proof_ok" class="form-check-input" id="authenticityProof"
+                                       {% if qa.authenticity_proof_ok %}checked{% endif %}>
+                                <label class="form-check-label" for="authenticityProof">Proof of product authenticity provided (brand authorization, purchase receipts)</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-medium">QA Inspector Notes</label>
+                            <textarea name="qa_notes" class="form-control" rows="4" 
+                                      placeholder="Detailed observations, findings, or issues identified during quality review">{{ qa.qa_notes|default:'' }}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between gap-2">
+                            <a href="{% url 'admin_kyc_review_detail' vendor.id %}" class="btn btn-outline-secondary">Cancel</a>
+                            <div>
+                                <button type="submit" name="action" value="save" class="btn btn-outline-primary me-2">
+                                    <i class="bi bi-save me-1"></i>Save Draft
+                                </button>
+                                <button type="submit" name="action" value="fail" class="btn btn-outline-danger me-2"
+                                        onclick="return confirm('Reject this vendor based on QA findings? This will mark KYC as rejected.');">
+                                    <i class="bi bi-x-circle me-1"></i>Fail QA
+                                </button>
+                                <button type="submit" name="action" value="pass" class="btn btn-success"
+                                        onclick="return confirm('Approve this vendor? They will proceed to verified seller stage.');">
+                                    <i class="bi bi-check-circle me-1"></i>Pass QA
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <!-- Shop Photos Preview -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-images me-2"></i>Shop Photos ({{ shop_photos|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if shop_photos %}
+                        <div class="row g-2">
+                            {% for photo in shop_photos %}
+                                <div class="col-6">
+                                    <a href="{{ photo.image.url }}" target="_blank">
+                                        <img src="{{ photo.image.url }}" alt="Shop photo" 
+                                             style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
+                                    </a>
+                                    {% if photo.caption %}
+                                        <small class="text-muted">{{ photo.caption }}</small>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No shop photos uploaded.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Compliance Documents -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-file-earmark me-2"></i>Compliance Docs</h5>
+                </div>
+                <div class="card-body">
+                    {% with compliance=vendor.compliance_records.first %}
+                        {% if compliance %}
+                            <ul class="list-unstyled mb-0">
+                                {% if compliance.nafdac_document %}
+                                    <li class="mb-2">
+                                        <a href="{{ compliance.nafdac_document.url }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                                            <i class="bi bi-file-earmark-pdf"></i> NAFDAC Certificate
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if compliance.son_document %}
+                                    <li class="mb-2">
+                                        <a href="{{ compliance.son_document.url }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                                            <i class="bi bi-file-earmark-pdf"></i> SON Certificate
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if vendor.utility_bill %}
+                                    <li class="mb-2">
+                                        <a href="{{ vendor.utility_bill.url }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                                            <i class="bi bi-file-earmark-text"></i> Utility Bill
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted mb-0">No compliance documents uploaded.</p>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Quick Reference -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2"></i>Vendor Summary</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="mb-0 small">
+                        <dt>Products Listed</dt>
+                        <dd>{{ vendor.product_set.count }}</dd>
+                        <dt>Account Created</dt>
+                        <dd>{{ vendor.date_joined|date:"M d, Y" }}</dd>
+                        <dt>KYC Submitted</dt>
+                        <dd>{{ vendor.kyc_submitted_at|date:"M d, Y"|default:'Not yet' }}</dd>
+                        <dt>Country</dt>
+                        <dd>{{ vendor.get_country_display }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

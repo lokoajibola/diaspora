@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+{% block title %}KYC Detail – {{ vendor.phone_number }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">KYC Review: {{ vendor.shop_name|default:vendor.phone_number }}</h3>
+            <p class="text-muted mb-0">
+                {{ vendor.first_name }} {{ vendor.last_name }} · {{ vendor.phone_number }}
+                {% if vendor.email %} · {{ vendor.email }}{% endif %}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'admin_kyc_review_list' %}" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+            <span class="badge fs-6 
+                {% if vendor.kyc_stage == 'approved' %}bg-success
+                {% elif vendor.kyc_stage == 'rejected' %}bg-danger
+                {% elif vendor.kyc_stage == 'internal_check' %}bg-warning text-dark
+                {% elif vendor.kyc_stage == 'quality_assurance' %}bg-info
+                {% elif vendor.kyc_stage == 'verified_seller' %}bg-primary
+                {% else %}bg-secondary{% endif %}">
+                {{ vendor.get_kyc_stage_display }}
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: Vendor Details -->
+        <div class="col-md-6">
+            <!-- Business Information -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-building me-2"></i>Business Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Business Name</dt>
+                        <dd class="col-sm-7">{{ vendor.shop_name|default:'<span class="text-danger">Missing</span>' }}</dd>
+                        
+                        <dt class="col-sm-5">CAC Number</dt>
+                        <dd class="col-sm-7">{{ vendor.business_registration_number|default:'<span class="text-muted">N/A</span>' }}</dd>
+                        
+                        <dt class="col-sm-5">Business Type</dt>
+                        <dd class="col-sm-7">{{ vendor.get_business_type_display|default:'<span class="text-muted">N/A</span>' }}</dd>
+                        
+                        <dt class="col-sm-5">Started</dt>
+                        <dd class="col-sm-7">{{ vendor.business_start_date|date:'M Y'|default:'<span class="text-muted">N/A</span>' }}</dd>
+                        
+                        <dt class="col-sm-5">TIN</dt>
+                        <dd class="col-sm-7">{{ vendor.tin|default:'<span class="text-muted">N/A</span>' }}</dd>
+                    </dl>
+                    {% if vendor.business_description %}
+                        <hr>
+                        <p class="mb-0"><strong>Description:</strong><br>{{ vendor.business_description }}</p>
+                    {% endif %}
+                    {% if vendor.business_logo %}
+                        <hr>
+                        <a href="{{ vendor.business_logo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-image"></i> View Logo
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Identity Verification -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-person-badge me-2"></i>Identity Verification</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Full Name</dt>
+                        <dd class="col-sm-7">{{ vendor.first_name }} {{ vendor.last_name }}</dd>
+                        
+                        <dt class="col-sm-5">Date of Birth</dt>
+                        <dd class="col-sm-7">{{ vendor.date_of_birth|date:'M d, Y'|default:'<span class="text-danger">Missing</span>' }}</dd>
+                        
+                        <dt class="col-sm-5">Nationality</dt>
+                        <dd class="col-sm-7">{{ vendor.nationality|default:'<span class="text-muted">N/A</span>' }}</dd>
+                        
+                        <dt class="col-sm-5">NIN</dt>
+                        <dd class="col-sm-7">
+                            {% if vendor.nin %}
+                                <code>{{ vendor.nin }}</code>
+                                {% if internal_check.nin_verified == 'passed' %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% elif internal_check.nin_verified == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-danger">Missing</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-5">BVN</dt>
+                        <dd class="col-sm-7">
+                            {% if vendor.bvn %}
+                                <code>{{ vendor.bvn }}</code>
+                                {% if internal_check.bvn_verified == 'passed' %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% elif internal_check.bvn_verified == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-danger">Missing</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-5">ID Type</dt>
+                        <dd class="col-sm-7">{{ vendor.get_id_document_type_display|default:'<span class="text-muted">N/A</span>' }}</dd>
+                    </dl>
+                    <hr>
+                    <div class="d-flex gap-2 flex-wrap">
+                        {% if vendor.id_document %}
+                            <a href="{{ vendor.id_document.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-file-earmark"></i> View ID
+                            </a>
+                        {% endif %}
+                        {% if vendor.liveness_selfie %}
+                            <a href="{{ vendor.liveness_selfie.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-camera"></i> View Selfie
+                            </a>
+                        {% endif %}
+                        {% if vendor.passport_photo %}
+                            <a href="{{ vendor.passport_photo.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-person"></i> View Passport
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-telephone me-2"></i>Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Phone</dt>
+                        <dd class="col-sm-7">{{ vendor.phone_number }}
+                            {% if vendor.otp_phone_verified %}
+                                <span class="badge bg-success">OTP Verified</span>
+                            {% endif %}
+                        </dd>
+                        <dt class="col-sm-5">Email</dt>
+                        <dd class="col-sm-7">{{ vendor.email|default:'<span class="text-muted">N/A</span>' }}
+                            {% if vendor.otp_email_verified %}
+                                <span class="badge bg-success">OTP Verified</span>
+                            {% endif %}
+                        </dd>
+                        <dt class="col-sm-5">WhatsApp</dt>
+                        <dd class="col-sm-7">{{ vendor.whatsapp_number|default:'<span class="text-muted">N/A</span>' }}</dd>
+                        <dt class="col-sm-5">Emergency</dt>
+                        <dd class="col-sm-7">{{ vendor.emergency_contact_name|default:'<span class="text-muted">N/A</span>' }}
+                            {% if vendor.emergency_contact_phone %}({{ vendor.emergency_contact_phone }}){% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Address, Banking, Compliance -->
+        <div class="col-md-6">
+            <!-- Address Verification -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-geo-alt me-2"></i>Address Verification</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Home Address</dt>
+                        <dd class="col-sm-7">{{ vendor.home_address|default:'<span class="text-muted">N/A</span>'|linebreaksbr }}</dd>
+                        <dt class="col-sm-5">Shop Address</dt>
+                        <dd class="col-sm-7">{{ vendor.shop_address|default:'<span class="text-danger">Missing</span>'|linebreaksbr }}</dd>
+                        <dt class="col-sm-5">Utility Bill</dt>
+                        <dd class="col-sm-7">
+                            {% if vendor.utility_bill %}
+                                <a href="{{ vendor.utility_bill.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-file-earmark"></i> View Bill
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Not uploaded</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                    {% if shop_photos %}
+                        <hr>
+                        <strong>Shop Photos ({{ shop_photos|length }}):</strong>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            {% for photo in shop_photos %}
+                                <a href="{{ photo.image.url }}" target="_blank">
+                                    <img src="{{ photo.image.url }}" alt="Shop photo" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Banking Details -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-bank me-2"></i>Banking Details</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Bank Name</dt>
+                        <dd class="col-sm-7">{{ vendor.bank_name|default:'<span class="text-danger">Missing</span>' }}</dd>
+                        <dt class="col-sm-5">Account Name</dt>
+                        <dd class="col-sm-7">{{ vendor.bank_account_name|default:'<span class="text-danger">Missing</span>' }}</dd>
+                        <dt class="col-sm-5">Account Number</dt>
+                        <dd class="col-sm-7">{{ vendor.bank_account_number|default:'<span class="text-danger">Missing</span>' }}
+                            {% if internal_check.bank_matched == 'passed' %}
+                                <span class="badge bg-success">Matched</span>
+                            {% elif internal_check.bank_matched == 'failed' %}
+                                <span class="badge bg-danger">Mismatch</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Guarantors -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-people me-2"></i>Guarantors</h5>
+                </div>
+                <div class="card-body">
+                    {% if guarantors %}
+                        {% for g in guarantors %}
+                            <div class="mb-3">
+                                <strong>{{ g.full_name }}</strong>
+                                <br><small>Phone: {{ g.phone_number }}</small>
+                                <br><small>Occupation: {{ g.occupation }}</small>
+                                <br><small>Relationship: {{ g.relationship }}</small>
+                                <br><small class="text-muted">Address: {{ g.address }}</small>
+                            </div>
+                            {% if not forloop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">No guarantor provided.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Compliance -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-shield-check me-2"></i>Product Compliance</h5>
+                </div>
+                <div class="card-body">
+                    {% if compliance %}
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">NAFDAC</dt>
+                            <dd class="col-sm-7">
+                                {{ compliance.nafdac_number|default:'<span class="text-muted">N/A</span>' }}
+                                {% if compliance.nafdac_document %}
+                                    <a href="{{ compliance.nafdac_document.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">View</a>
+                                {% endif %}
+                            </dd>
+                            <dt class="col-sm-5">SON</dt>
+                            <dd class="col-sm-7">
+                                {{ compliance.son_number|default:'<span class="text-muted">N/A</span>' }}
+                                {% if compliance.son_document %}
+                                    <a href="{{ compliance.son_document.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">View</a>
+                                {% endif %}
+                            </dd>
+                            <dt class="col-sm-5">Labels Compliant</dt>
+                            <dd class="col-sm-7">{{ compliance.has_labels|yesno:"Yes,No" }}</dd>
+                            <dt class="col-sm-5">Batch Tracking</dt>
+                            <dd class="col-sm-7">{{ compliance.batch_tracking|yesno:"Yes,No" }}</dd>
+                        </dl>
+                    {% else %}
+                        <p class="text-muted mb-0">No compliance information provided.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Actions</h5>
+                    
+                    {% if vendor.kyc_stage == 'internal_check' or not internal_check %}
+                        <a href="{% url 'admin_kyc_perform_checks' vendor.id %}" class="btn btn-warning w-100 mb-2">
+                            <i class="bi bi-clipboard-check me-2"></i>Perform Internal Checks
+                        </a>
+                    {% endif %}
+                    
+                    {% if vendor.kyc_stage == 'quality_assurance' or vendor.kyc_stage == 'verified_seller' %}
+                        <a href="{% url 'admin_qa_review' vendor.id %}" class="btn btn-info w-100 mb-2 text-white">
+                            <i class="bi bi-search me-2"></i>Quality Assurance Review
+                        </a>
+                    {% endif %}
+                    
+                    {% if vendor.kyc_stage == 'verified_seller' or vendor.kyc_stage == 'quality_assurance' %}
+                        <a href="{% url 'admin_verified_seller' vendor.id %}" class="btn btn-success w-100 mb-2">
+                            <i class="bi bi-patch-check-fill me-2"></i>Assign Verified Seller Badge
+                        </a>
+                    {% endif %}
+                    
+                    <!-- Quick Approve/Reject -->
+                    {% if vendor.kyc_stage != 'approved' %}
+                        <form action="{% url 'admin_approve_vendor_kyc' vendor.id %}" method="POST" class="d-inline w-100">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-success w-100 mb-2">
+                                <i class="bi bi-check-lg me-2"></i>Quick Approve KYC
+                            </button>
+                        </form>
+                    {% endif %}
+                    
+                    {% if vendor.kyc_stage != 'rejected' and vendor.kyc_stage != 'approved' %}
+                        <form action="{% url 'admin_reject_vendor_kyc' vendor.id %}" method="POST" class="mt-2">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="text" name="rejection_reason" class="form-control" placeholder="Rejection reason" required>
+                                <button type="submit" class="btn btn-outline-danger">Reject</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
